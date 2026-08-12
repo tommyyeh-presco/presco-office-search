@@ -54,3 +54,28 @@ def test_build_geojson_rounds_coordinates():
     national = {"type": "FeatureCollection", "features": [_feature("台北市", "大安區")]}
     result = build_geojson(national, {})
     assert result["features"][0]["geometry"]["coordinates"] == [[[121.12346, 25.12346]]]
+
+
+def test_build_geojson_drops_outlying_island_sub_polygons():
+    # Keelung's 中正區 administratively includes the Diaoyutai Islands,
+    # ~120km offshore. Left in, they blow out the map's auto-fit bounding
+    # box to include open ocean, so any sub-polygon far east of the
+    # mainland should be dropped.
+    feature = {
+        "type": "Feature",
+        "properties": {"COUNTYNAME": "基隆市", "TOWNNAME": "中正區"},
+        "geometry": {
+            "type": "MultiPolygon",
+            "coordinates": [
+                [[[121.74, 25.13], [121.75, 25.13], [121.75, 25.14], [121.74, 25.13]]],
+                [[[123.68, 25.95], [123.69, 25.95], [123.69, 25.96], [123.68, 25.95]]],
+            ],
+        },
+    }
+    national = {"type": "FeatureCollection", "features": [feature]}
+    result = build_geojson(national, {})
+    geometry = result["features"][0]["geometry"]
+    assert geometry["type"] == "Polygon"
+    assert geometry["coordinates"] == [
+        [[121.74, 25.13], [121.75, 25.13], [121.75, 25.14], [121.74, 25.13]]
+    ]

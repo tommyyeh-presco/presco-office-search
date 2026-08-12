@@ -6,11 +6,32 @@ from district_mapping import canonicalize
 TARGET_COUNTIES = {"台北市", "新北市", "基隆市", "宜蘭縣", "桃園縣"}
 COORD_DECIMALS = 5
 
+# Some districts (e.g. Keelung's 中正區, which administers the disputed
+# Diaoyutai Islands ~120km offshore) have boundary data that includes
+# small outlying-island polygons far from the Northern Taiwan mainland.
+# Left in, they blow out the map's auto-fit bounding box to include open
+# ocean, so any sub-polygon entirely east of this longitude is dropped.
+MAINLAND_LON_MAX = 122.3
+
 
 def _round_coords(coords):
     if isinstance(coords[0], (int, float)):
         return [round(c, COORD_DECIMALS) for c in coords]
     return [_round_coords(c) for c in coords]
+
+
+def _polygon_is_mainland(polygon_rings):
+    exterior_ring = polygon_rings[0]
+    return all(lon <= MAINLAND_LON_MAX for lon, lat in exterior_ring)
+
+
+def _drop_outlying_islands(geometry):
+    if geometry["type"] == "Polygon":
+        return geometry
+    mainland_polygons = [p for p in geometry["coordinates"] if _polygon_is_mainland(p)]
+    if len(mainland_polygons) == 1:
+        return {"type": "Polygon", "coordinates": mainland_polygons[0]}
+    return {"type": "MultiPolygon", "coordinates": mainland_polygons}
 
 
 def build_geojson(national_geojson, counts_by_district):
@@ -33,12 +54,13 @@ def build_geojson(national_geojson, counts_by_district):
 
         county, district = canonicalize(raw_county, raw_district)
         count = counts_by_district.get((county, district), 0)
+        geometry = _drop_outlying_islands(feature["geometry"])
 
         features.append({
             "type": "Feature",
             "geometry": {
-                "type": feature["geometry"]["type"],
-                "coordinates": _round_coords(feature["geometry"]["coordinates"]),
+                "type": geometry["type"],
+                "coordinates": _round_coords(geometry["coordinates"]),
             },
             "properties": {
                 "county": county,

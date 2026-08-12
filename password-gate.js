@@ -16,9 +16,14 @@
     document.dispatchEvent(new Event("presco:authed"));
   }
 
-  if (sessionStorage.getItem(SESSION_KEY) === "1") {
-    showApp();
-  }
+  // Deferred to DOMContentLoaded so app.js (loaded after this script) has
+  // already registered its "presco:authed" listener by the time this can
+  // fire for an already-authenticated session.
+  document.addEventListener("DOMContentLoaded", () => {
+    if (sessionStorage.getItem(SESSION_KEY) === "1") {
+      showApp();
+    }
+  });
 
   document.getElementById("gate-form").addEventListener("submit", async (e) => {
     e.preventDefault();
