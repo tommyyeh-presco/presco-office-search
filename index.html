@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>數網找辦公室</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="gate">
+    <form id="gate-form">
+      <h1>數網找辦公室</h1>
+      <p>請輸入密碼以檢視員工居住地分佈圖</p>
+      <input type="password" id="gate-password" placeholder="密碼" autocomplete="off" required>
+      <button type="submit">進入</button>
+      <p id="gate-error" class="error" hidden>密碼錯誤，請再試一次</p>
+    </form>
+  </div>
+
+  <div id="app" hidden>
+    <header>
+      <h1>數網找辦公室 — 員工居住地分佈</h1>
+      <p class="subtitle">北台灣各行政區員工人數（依居住地區域統計）</p>
+    </header>
+    <div id="map"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="password-gate.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
