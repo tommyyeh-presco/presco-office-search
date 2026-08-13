@@ -382,10 +382,17 @@ function indexUnits(geojson) {
         ...unit,
         community_name: feature.properties.community_name,
         address: feature.properties.address,
+        building_age: feature.properties.building_age,
       });
     }
   }
 }
+
+// Building age isn't from 591 — it's a small, separately researched
+// dataset (see data/building_ages.json) covering only buildings with a
+// name specific enough to identify uniquely. Shown with a confidence
+// label and source link since it's not as reliable as 591's own fields.
+const CONFIDENCE_LABELS = { high: "高", medium: "中", low: "低" };
 
 function buildSidebarHtml(unit) {
   const photos = (unit.photos || [])
@@ -398,6 +405,13 @@ function buildSidebarHtml(unit) {
     unit.surrounding && unit.surrounding.desc
       ? `<div class="sidebar-fact"><span>鄰近</span><span>${escapeHtml(unit.surrounding.desc)} ${escapeHtml(unit.surrounding.distance || "")}</span></div>`
       : "";
+  const buildingAge = unit.building_age
+    ? `<div class="sidebar-fact"><span>屋齡</span><span>${unit.building_age.age_years}年（${unit.building_age.year}年完工）` +
+      `<span class="sidebar-confidence sidebar-confidence-${escapeHtml(unit.building_age.confidence)}">信賴度：${escapeHtml(CONFIDENCE_LABELS[unit.building_age.confidence] || unit.building_age.confidence)}</span></span></div>` +
+      (unit.building_age.source
+        ? `<div class="sidebar-age-source">屋齡資料來源：<a href="${escapeHtml(unit.building_age.source)}" target="_blank" rel="noopener noreferrer">查看</a></div>`
+        : "")
+    : "";
   const unitPrice = unit.price_per
     ? `<span class="sidebar-unit-price">(${unit.price_per}${escapeHtml(unit.price_per_unit || "")})</span>`
     : "";
@@ -410,9 +424,10 @@ function buildSidebarHtml(unit) {
     `<div class="sidebar-price">${escapeHtml(unit.price || "")}${escapeHtml(unit.price_unit || "")} ${unitPrice}</div>` +
     `<div class="sidebar-facts">` +
     `<div class="sidebar-fact"><span>樓層</span><span>${escapeHtml(unit.floor_name || "")}</span></div>` +
-    `<div class="sidebar-fact"><span>坪數</span><span>${escapeHtml(unit.area_name || "")}</span></div>` +
+    `<div class="sidebar-fact"><span>使用坪數</span><span>${escapeHtml(unit.area_name || "")}</span></div>` +
     `<div class="sidebar-fact"><span>裝潢</span><span>${escapeHtml(unit.fitment_name || "")}</span></div>` +
     `<div class="sidebar-fact"><span>更新</span><span>${escapeHtml(unit.refresh_time || "")}</span></div>` +
+    buildingAge +
     nearby +
     `</div>` +
     `<div class="sidebar-tags">${tags}</div>` +

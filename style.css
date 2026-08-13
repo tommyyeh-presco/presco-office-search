@@ -452,6 +452,41 @@ header h1 {
   color: #888;
 }
 
+.sidebar-confidence {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.sidebar-confidence-high {
+  background: #e3f5e1;
+  color: #2e6b1f;
+}
+
+.sidebar-confidence-medium {
+  background: #fdf0d5;
+  color: #9a6300;
+}
+
+.sidebar-confidence-low {
+  background: #f0f0f0;
+  color: #777;
+}
+
+.sidebar-age-source {
+  text-align: right;
+  font-size: 0.72rem;
+  color: #999;
+  margin-top: -0.2rem;
+}
+
+.sidebar-age-source a {
+  color: #999;
+}
+
 .sidebar-tags {
   line-height: 1.8;
 }

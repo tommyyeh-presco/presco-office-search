@@ -1,0 +1,347 @@
+{
+  "Neo One 大未來企業總部": {
+    "year": 2014,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190213185347333.html"
+  },
+  "世紀金融廣場大樓": {
+    "year": 1997,
+    "confidence": "high",
+    "source": "https://skyscrapers.tw/building/?id=874"
+  },
+  "世貿新都": {
+    "year": 1991,
+    "confidence": "high",
+    "source": "https://buy.housefun.com.tw/buy/building/11593"
+  },
+  "中和摩天東帝市": {
+    "year": 1997,
+    "confidence": "high",
+    "source": "https://zh.wikipedia.org/zh-tw/%E6%91%A9%E5%A4%A9%E6%9D%B1%E5%B8%9D%E5%B8%82"
+  },
+  "亞洲新銳": {
+    "year": 1989,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190219115531351.html"
+  },
+  "京站": {
+    "year": 2009,
+    "confidence": "medium",
+    "source": "https://buy.housefun.com.tw/buy/building/12471"
+  },
+  "保富萬商大樓": {
+    "year": 1988,
+    "confidence": "medium",
+    "source": "https://market.591.com.tw/3237"
+  },
+  "保富通商大樓": {
+    "year": 1984,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190213190056645.html"
+  },
+  "傳家堡": {
+    "year": 1997,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190219120135399.html"
+  },
+  "凌雲通商大樓": {
+    "year": 1993,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190213190444180.html"
+  },
+  "凱廈": {
+    "year": 1994,
+    "confidence": "high",
+    "source": "https://buy.housefun.com.tw/buy/building/7769"
+  },
+  "北城世貿大樓": {
+    "year": 1995,
+    "confidence": "medium",
+    "source": "https://community.houseprice.tw/building/23314"
+  },
+  "南港世紀廣場": {
+    "year": 2006,
+    "confidence": "high",
+    "source": "https://buy.housefun.com.tw/buy/building/12436"
+  },
+  "南港軟體工業園區": {
+    "year": 1999,
+    "confidence": "high",
+    "source": "https://land.bip.gov.tw/supply/Environ/More?id=255"
+  },
+  "南港軟體工業園區二期": {
+    "year": 2003,
+    "confidence": "medium",
+    "source": "https://zh.wikipedia.org/zh-tw/%E5%8D%97%E6%B8%AF%E8%BB%9F%E9%AB%94%E7%94%A2%E6%A5%AD%E5%9C%92%E5%8D%80"
+  },
+  "台北企業總部園區": {
+    "year": 2014,
+    "confidence": "medium",
+    "source": "https://zh.wikipedia.org/wiki/%E5%8F%B0%E5%8C%97%E4%BC%81%E6%A5%AD%E7%B8%BD%E9%83%A8%E5%9C%92%E5%8D%80"
+  },
+  "台北時代廣場": {
+    "year": 2015,
+    "confidence": "high",
+    "source": "https://community.houseprice.tw/building/36670/"
+  },
+  "台北矽谷": {
+    "year": 2002,
+    "confidence": "medium",
+    "source": "https://market.591.com.tw/29509"
+  },
+  "台北科技城": {
+    "year": 2003,
+    "confidence": "medium",
+    "source": "https://community.houseprice.tw/building/28833"
+  },
+  "台灣智匯總部": {
+    "year": 2025,
+    "confidence": "high",
+    "source": "https://www.plex.com.tw/projects/view/id/4014"
+  },
+  "台灣科技公園": {
+    "year": 2023,
+    "confidence": "high",
+    "source": "https://www.chinatimes.com/newspapers/20211201000307-260210"
+  },
+  "吉城企業家": {
+    "year": 2015,
+    "confidence": "medium",
+    "source": "https://market.591.com.tw/34995"
+  },
+  "味全大樓": {
+    "year": 1986,
+    "confidence": "medium",
+    "source": "https://www.tw101.tw/BuildingContent.aspx?id=308"
+  },
+  "國泰人壽潭美辦公大樓": {
+    "year": 2015,
+    "confidence": "low",
+    "source": "https://market.591.com.tw/35284"
+  },
+  "士林大悅": {
+    "year": 2020,
+    "confidence": "high",
+    "source": "https://www.plex.com.tw/projects/view/id/2817"
+  },
+  "大業鴻圖": {
+    "year": 2022,
+    "confidence": "high",
+    "source": "https://community.houseprice.tw/building/208275/"
+  },
+  "大湖都會大樓": {
+    "year": 1995,
+    "confidence": "medium",
+    "source": "https://buy.housefun.com.tw/buy/building/9039"
+  },
+  "大稻埕華廈": {
+    "year": 1979,
+    "confidence": "medium",
+    "source": "https://community.houseprice.tw/building/27222/"
+  },
+  "天臺廣場": {
+    "year": 1994,
+    "confidence": "medium",
+    "source": "https://inews.setn.com/news/1591151"
+  },
+  "宏泰巨星": {
+    "year": 1989,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190222150918629.html"
+  },
+  "巴黎科技總部大樓": {
+    "year": 2002,
+    "confidence": "medium",
+    "source": "https://market.591.com.tw/2540"
+  },
+  "帝國大廈": {
+    "year": 1985,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190213190133106.html"
+  },
+  "廣成大廈": {
+    "year": 1981,
+    "confidence": "high",
+    "source": "https://community.houseprice.tw/building/25297"
+  },
+  "建國二路華廈": {
+    "year": null,
+    "confidence": "none",
+    "source": ""
+  },
+  "御城": {
+    "year": 2014,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190213185348793.html"
+  },
+  "忠泰世界廣場": {
+    "year": 2026,
+    "confidence": "medium",
+    "source": "https://www.kajima.com.tw/%E5%BF%A0%E6%B3%B0%E4%B8%96%E7%95%8C%E5%BB%A3%E5%A0%B4%E5%95%86%E6%A5%AD%E8%BE%A6%E5%85%AC%E5%A4%A7%E6%A8%93%E6%96%B0%E5%BB%BA%E5%B7%A5%E7%A8%8B%E4%B8%8A%E6%A8%91%E5%85%B8%E7%A6%AE/"
+  },
+  "快易居": {
+    "year": 2002,
+    "confidence": "medium",
+    "source": "https://community.houseprice.tw/building/487/"
+  },
+  "揚昇忠孝大樓": {
+    "year": 1989,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190213190343591.html"
+  },
+  "昇陽之光": {
+    "year": 2001,
+    "confidence": "high",
+    "source": "https://www.leju.com.tw/community/L4d34244d318d"
+  },
+  "星勢力大樓": {
+    "year": 2001,
+    "confidence": "medium",
+    "source": "https://community.houseprice.tw/building/155602/"
+  },
+  "時代廣場大樓": {
+    "year": 2003,
+    "confidence": "high",
+    "source": "https://buy.cthouse.com.tw/community/20190716214809359.html"
+  },
+  "晶鑽科技大樓": {
+    "year": 2003,
+    "confidence": "medium",
+    "source": "https://community.houseprice.tw/building/21672"
+  },
+  "東方科學園區": {
+    "year": 1994,
+    "confidence": "medium",
+    "source": "https://zh.wikipedia.org/zh-tw/東方科學園區"
+  },
+  "松江南京站": {
+    "year": null,
+    "confidence": "none",
+    "source": ""
+  },
+  "欣翰士林官邸": {
+    "year": 2015,
+    "confidence": "high",
+    "source": "https://www.plex.com.tw/projects/view/id/1395"
+  },
+  "獅子林新光商業大樓": {
+    "year": 1979,
+    "confidence": "high",
+    "source": "https://zh.wikipedia.org/zh-tw/獅子林新光商業大樓"
+  },
+  "白天鵝產經總部": {
+    "year": 2023,
+    "confidence": "high",
+    "source": "https://market.591.com.tw/103999/overview"
+  },
+  "石川水岸": {
+    "year": 2019,
+    "confidence": "medium",
+    "source": "https://market.591.com.tw/50645/overview"
+  },
+  "矽塔科技中心": {
+    "year": 2000,
+    "confidence": "high",
+    "source": "https://www.leju.com.tw/community/Lab939373bcc6"
+  },
+  "立軒CMBD-CASH": {
+    "year": 2018,
+    "confidence": "high",
+    "source": "https://www.plex.com.tw/projects/view/id/7141"
+  },
+  "精鷹大樓": {
+    "year": 1999,
+    "confidence": "medium",
+    "source": "https://market.591.com.tw/1658/overview"
+  },
+  "統豐世貿大樓": {
+    "year": 2003,
+    "confidence": "high",
+    "source": "https://market.591.com.tw/3209/overview"
+  },
+  "經緯科技大樓": {
+    "year": 2001,
+    "confidence": "high",
+    "source": "https://market.591.com.tw/2579/overview"
+  },
+  "翡翠花園大廈": {
+    "year": 1996,
+    "confidence": "high",
+    "source": "https://www.leju.com.tw/community/Lf603092660c7"
+  },
+  "聯虹識野科技大樓": {
+    "year": 2020,
+    "confidence": "high",
+    "source": "https://market.591.com.tw/5921625/overview"
+  },
+  "華爾街科技總部": {
+    "year": 2002,
+    "confidence": "high",
+    "source": "https://community.houseprice.tw/building/23079/price/"
+  },
+  "行善大廈": {
+    "year": 1998,
+    "confidence": "low",
+    "source": "https://market.591.com.tw/1588"
+  },
+  "見龍和橋": {
+    "year": 2008,
+    "confidence": "high",
+    "source": "https://community.houseprice.tw/building/37816/"
+  },
+  "遠東ABC工業園區五期": {
+    "year": 1986,
+    "confidence": "medium",
+    "source": "https://community.houseprice.tw/building/23265/"
+  },
+  "遠東世紀廣場二期": {
+    "year": 2001,
+    "confidence": "high",
+    "source": "https://www.plex.com.tw/projects/view/id/4799"
+  },
+  "遠雄U-TOWN": {
+    "year": 2014,
+    "confidence": "high",
+    "source": "https://zh.wikipedia.org/zh-tw/%E9%81%A0%E9%9B%84U-TOWN"
+  },
+  "遠雄商舟": {
+    "year": 2025,
+    "confidence": "medium",
+    "source": "https://money.udn.com/money/story/5635/8933475"
+  },
+  "遠雄宜進I-CITY": {
+    "year": 2023,
+    "confidence": "high",
+    "source": "https://community.houseprice.tw/building/172037"
+  },
+  "遠雄金融中心": {
+    "year": 2013,
+    "confidence": "high",
+    "source": "https://zh.wikipedia.org/zh-tw/%E9%81%A0%E9%9B%84%E9%87%91%E8%9E%8D%E4%B8%AD%E5%BF%83"
+  },
+  "長虹NASDAK": {
+    "year": 2007,
+    "confidence": "high",
+    "source": "https://buy.housefun.com.tw/Buy/Building/14744/"
+  },
+  "青山鎮": {
+    "year": null,
+    "confidence": "none",
+    "source": ""
+  },
+  "馥華艾美": {
+    "year": 2025,
+    "confidence": "medium",
+    "source": "https://www.travelerluxe.com/article/desc/260012546"
+  },
+  "鵬馳大樓": {
+    "year": 2002,
+    "confidence": "high",
+    "source": "https://buy.housefun.com.tw/buy/building/26801"
+  },
+  "鼎實企業總部": {
+    "year": 2023,
+    "confidence": "high",
+    "source": "https://newhouse.591.com.tw/130737"
+  }
+}
