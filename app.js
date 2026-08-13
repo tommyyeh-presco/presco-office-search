@@ -85,6 +85,8 @@ function addLayerMenu(map) {
     div.innerHTML =
       `<button type="button" id="layer-menu-toggle" class="layer-menu-button">☰ 圖層</button>` +
       `<div id="layer-menu-panel" class="layer-menu-panel" hidden>` +
+      `<label class="layer-menu-item"><input type="checkbox" id="listings-visibility-toggle" checked> 顯示辦公室物件資料</label>` +
+      `<div class="layer-menu-divider"></div>` +
       `<div class="layer-menu-title">隱藏城市（塗黑並移除物件）</div>` +
       ALL_COUNTIES.map(
         (c) =>
@@ -107,6 +109,11 @@ function addLayerMenu(map) {
       else hiddenCounties.add(checkbox.value);
       applyCountyVisibility();
     });
+  });
+
+  document.getElementById("listings-visibility-toggle").addEventListener("change", (e) => {
+    listingsVisible = e.target.checked;
+    applyListingsVisibility();
   });
 }
 
@@ -169,11 +176,14 @@ const TYPE_LABELS = { 1: "租", 2: "售" };
 let listingsGeojson = null;
 let listingsLayerGroup = null;
 let unitsById = new Map();
+let listingsVisible = true;
+let listingsFilterControlEl = null;
+let listingsLegendEl = null;
 // Default reflects the actual space need (800坪), combinable across floors
 // of the same building — not a single-unit minimum. The slider can still
 // go down to the data floor or up higher, per "filter even higher" later.
 let currentMinArea = 800;
-let currentMaxRentPrice = MAX_RENT_PRICE;
+let currentMaxRentPrice = 4000000;
 let currentMaxSalePrice = MAX_SALE_PRICE;
 let currentMaxRentUnitPrice = MAX_RENT_UNIT_PRICE;
 let currentMaxSaleUnitPrice = MAX_SALE_UNIT_PRICE;
@@ -305,6 +315,7 @@ function addListingsFilterControl(map) {
       `<label>最高售價單價：<span id="max-sale-unit-value">${currentMaxSaleUnitPrice.toLocaleString()}</span> 萬/坪</label>` +
       `<input type="range" id="max-sale-unit-slider" min="0" max="${MAX_SALE_UNIT_PRICE}" step="5" value="${currentMaxSaleUnitPrice}">`;
     L.DomEvent.disableClickPropagation(div);
+    listingsFilterControlEl = div;
     return div;
   };
   control.addTo(map);
@@ -345,9 +356,22 @@ function addListingsLegend(map) {
       '<div><span class="swatch listing-pin-rent"></span>出租</div>' +
       '<div><span class="swatch listing-pin-sale"></span>出售</div>' +
       '<div><span class="swatch listing-pin-mixed"></span>租售皆有</div>';
+    listingsLegendEl = div;
     return div;
   };
   legend.addTo(map);
+}
+
+// Presentation mode: hide every listing-related layer/control so only
+// the employee-distribution choropleth shows.
+function applyListingsVisibility() {
+  if (listingsVisible) {
+    if (!mapRef.hasLayer(listingsLayerGroup)) listingsLayerGroup.addTo(mapRef);
+  } else if (mapRef.hasLayer(listingsLayerGroup)) {
+    mapRef.removeLayer(listingsLayerGroup);
+  }
+  if (listingsFilterControlEl) listingsFilterControlEl.style.display = listingsVisible ? "" : "none";
+  if (listingsLegendEl) listingsLegendEl.style.display = listingsVisible ? "" : "none";
 }
 
 function indexUnits(geojson) {
@@ -365,7 +389,7 @@ function indexUnits(geojson) {
 
 function buildSidebarHtml(unit) {
   const photos = (unit.photos || [])
-    .map((url) => `<img src="${escapeHtml(url)}" alt="" loading="lazy">`)
+    .map((url, i) => `<img src="${escapeHtml(url)}" alt="" loading="lazy" onclick="openLightbox(${i})">`)
     .join("");
   const tags = (unit.tags || [])
     .map((t) => `<span class="sidebar-tag">${escapeHtml(t)}</span>`)
@@ -379,7 +403,6 @@ function buildSidebarHtml(unit) {
     : "";
 
   return (
-    `<div class="sidebar-photos">${photos || '<div class="sidebar-no-photo">無照片</div>'}</div>` +
     `<div class="sidebar-body">` +
     `<span class="sidebar-type-badge">${escapeHtml(TYPE_LABELS[unit.type] || "")}</span>` +
     `<h3>${escapeHtml(unit.title)}</h3>` +
@@ -393,6 +416,7 @@ function buildSidebarHtml(unit) {
     nearby +
     `</div>` +
     `<div class="sidebar-tags">${tags}</div>` +
+    `<div class="sidebar-photos">${photos || '<div class="sidebar-no-photo">無照片</div>'}</div>` +
     `<a href="${escapeHtml(unit.url)}" target="_blank" rel="noopener noreferrer" class="sidebar-591-link">在591查看完整資訊 →</a>` +
     `</div>`
   );
@@ -401,12 +425,55 @@ function buildSidebarHtml(unit) {
 function openListingSidebar(unitId) {
   const unit = unitsById.get(unitId);
   if (!unit) return;
+  currentSidebarUnit = unit;
   document.getElementById("listing-sidebar-content").innerHTML = buildSidebarHtml(unit);
   document.getElementById("listing-sidebar").classList.add("open");
 }
 
 function closeListingSidebar() {
   document.getElementById("listing-sidebar").classList.remove("open");
+}
+
+// ---------------------------------------------------------------------
+// Photo lightbox
+// ---------------------------------------------------------------------
+
+let currentSidebarUnit = null;
+let lightboxIndex = 0;
+
+function renderLightbox() {
+  const photos = currentSidebarUnit.photos;
+  document.getElementById("photo-lightbox-img").src = photos[lightboxIndex];
+  document.getElementById("photo-lightbox-counter").textContent = `${lightboxIndex + 1} / ${photos.length}`;
+}
+
+function openLightbox(index) {
+  if (!currentSidebarUnit || !currentSidebarUnit.photos || currentSidebarUnit.photos.length === 0) return;
+  lightboxIndex = index;
+  renderLightbox();
+  document.getElementById("photo-lightbox").classList.add("open");
+}
+
+function closeLightbox() {
+  document.getElementById("photo-lightbox").classList.remove("open");
+}
+
+function lightboxStep(delta) {
+  const photos = currentSidebarUnit.photos;
+  lightboxIndex = (lightboxIndex + delta + photos.length) % photos.length;
+  renderLightbox();
+}
+
+function initLightboxControls() {
+  document.getElementById("photo-lightbox-close").addEventListener("click", closeLightbox);
+  document.getElementById("photo-lightbox-prev").addEventListener("click", () => lightboxStep(-1));
+  document.getElementById("photo-lightbox-next").addEventListener("click", () => lightboxStep(1));
+  document.addEventListener("keydown", (e) => {
+    if (!document.getElementById("photo-lightbox").classList.contains("open")) return;
+    if (e.key === "ArrowLeft") lightboxStep(-1);
+    else if (e.key === "ArrowRight") lightboxStep(1);
+    else if (e.key === "Escape") closeLightbox();
+  });
 }
 
 async function addListings(map) {
@@ -482,6 +549,7 @@ async function initMap() {
   addLayerMenu(map);
 
   document.getElementById("listing-sidebar-close").addEventListener("click", closeListingSidebar);
+  initLightboxControls();
 
   // The map container is unhidden in the same tick as initMap() runs (the
   // password gate reveals #app right before dispatching the "presco:authed"
