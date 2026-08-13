@@ -279,6 +279,17 @@ header h1 {
   padding: 0.4rem 0;
 }
 
+.listing-combined-note {
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  background: #eef6ec;
+  border: 1px solid #cfe8c8;
+  border-radius: 5px;
+  color: #2e6b1f;
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
 .listing-unit a {
   color: var(--brand);
   text-decoration: none;

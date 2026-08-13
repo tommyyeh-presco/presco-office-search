@@ -92,7 +92,10 @@ const TYPE_LABELS = { 1: "租", 2: "售" };
 
 let listingsGeojson = null;
 let listingsLayerGroup = null;
-let currentMinArea = MIN_AREA_FETCHED;
+// Default reflects the actual space need (800坪), combinable across floors
+// of the same building — not a single-unit minimum. The slider can still
+// go down to the data floor or up higher, per "filter even higher" later.
+let currentMinArea = 800;
 let currentMaxRentPrice = MAX_RENT_PRICE;
 let currentMaxSalePrice = MAX_SALE_PRICE;
 
@@ -100,12 +103,39 @@ function parsePrice(priceStr) {
   return parseFloat(String(priceStr).replace(/,/g, "")) || 0;
 }
 
-function unitPassesFilters(unit) {
-  if (unit.area < currentMinArea) return false;
+function unitPassesPriceFilter(unit) {
   const price = parsePrice(unit.price);
   if (unit.type === 1) return price <= currentMaxRentPrice;
   if (unit.type === 2) return price <= currentMaxSalePrice;
   return true;
+}
+
+// Units at the same building can be rented/bought together (different
+// floors combining to meet the space need), but a rent listing and a
+// sale listing can't be combined into one deal — group by type, and a
+// group qualifies if ITS units' areas add up to the threshold, even if
+// no single floor does alone.
+function combinableGroups(units) {
+  const byType = new Map();
+  for (const unit of units) {
+    if (!byType.has(unit.type)) byType.set(unit.type, []);
+    byType.get(unit.type).push(unit);
+  }
+  return Array.from(byType.values());
+}
+
+// Returns the units from whichever combinable groups meet currentMinArea
+// (as a combined total), after dropping units that fail the price filter
+// on their own — only units that are individually affordable get counted
+// toward a combined total.
+function qualifyingUnits(allUnits) {
+  const priceOk = allUnits.filter(unitPassesPriceFilter);
+  const qualifying = [];
+  for (const group of combinableGroups(priceOk)) {
+    const total = group.reduce((sum, u) => sum + u.area, 0);
+    if (total >= currentMinArea) qualifying.push(...group);
+  }
+  return qualifying;
 }
 
 function pinClassForUnits(units) {
@@ -115,10 +145,8 @@ function pinClassForUnits(units) {
   return hasSale ? "listing-pin-sale" : "listing-pin-rent";
 }
 
-function buildListingPopupHtml(props, units) {
-  const rows = units
-    .map(
-      (u) => `
+function unitRowHtml(u) {
+  return `
       <div class="listing-unit">
         <a href="${escapeHtml(u.url)}" target="_blank" rel="noopener noreferrer">
           [${escapeHtml(TYPE_LABELS[u.type] || "")}] ${escapeHtml(u.title)}
@@ -127,14 +155,25 @@ function buildListingPopupHtml(props, units) {
           ${escapeHtml(u.floor_name || "")} · ${escapeHtml(u.area_name || "")} ·
           ${escapeHtml(u.price || "")}${escapeHtml(u.price_unit || "")}
         </div>
-      </div>`
-    )
+      </div>`;
+}
+
+function buildListingPopupHtml(props, units) {
+  const sections = combinableGroups(units)
+    .map((group) => {
+      const total = group.reduce((sum, u) => sum + u.area, 0);
+      const combinedNote =
+        group.length > 1
+          ? `<div class="listing-combined-note">可合併${escapeHtml(TYPE_LABELS[group[0].type] || "")}：共 ${total.toFixed(1)} 坪（${group.length} 個樓層）</div>`
+          : "";
+      return combinedNote + group.map(unitRowHtml).join("");
+    })
     .join("");
   return (
     `<div class="listing-popup">` +
     `<strong>${escapeHtml(props.community_name || props.address)}</strong>` +
     `<div class="listing-popup-address">${escapeHtml(props.address)}</div>` +
-    rows +
+    sections +
     `</div>`
   );
 }
@@ -142,7 +181,7 @@ function buildListingPopupHtml(props, units) {
 function renderListingPins() {
   listingsLayerGroup.clearLayers();
   for (const feature of listingsGeojson.features) {
-    const units = feature.properties.units.filter(unitPassesFilters);
+    const units = qualifyingUnits(feature.properties.units);
     if (units.length === 0) continue;
     const [lng, lat] = feature.geometry.coordinates;
     L.marker([lat, lng], {
@@ -163,8 +202,8 @@ function addListingsFilterControl(map) {
   control.onAdd = () => {
     const div = L.DomUtil.create("div", "listings-filter");
     div.innerHTML =
-      `<label>最小坪數：<span id="min-area-value">${currentMinArea}</span> 坪</label>` +
-      `<input type="range" id="min-area-slider" min="${MIN_AREA_FETCHED}" max="2000" step="50" value="${currentMinArea}">` +
+      `<label>最小總坪數（可合併樓層）：<span id="min-area-value">${currentMinArea}</span> 坪</label>` +
+      `<input type="range" id="min-area-slider" min="${MIN_AREA_FETCHED}" max="3000" step="50" value="${currentMinArea}">` +
       `<label>最高月租金：<span id="max-rent-value">${currentMaxRentPrice.toLocaleString()}</span> 元/月</label>` +
       `<input type="range" id="max-rent-slider" min="0" max="${MAX_RENT_PRICE}" step="50000" value="${currentMaxRentPrice}">` +
       `<label>最高總價：<span id="max-sale-value">${currentMaxSalePrice.toLocaleString()}</span> 萬</label>` +
