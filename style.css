@@ -199,3 +199,98 @@ header h1 {
   font-size: 0.75rem;
   color: #555;
 }
+
+.listing-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.listing-pin-rent {
+  background: #2563eb;
+}
+
+.listing-pin-sale {
+  background: #c2410c;
+}
+
+.listing-pin-mixed {
+  background: linear-gradient(135deg, #2563eb 50%, #c2410c 50%);
+}
+
+.listings-filter {
+  background: #fff;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 0.8rem;
+}
+
+.listings-filter label {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #333;
+}
+
+.listings-filter label:not(:first-child) {
+  margin-top: 0.6rem;
+}
+
+.listings-filter input[type="range"] {
+  width: 180px;
+}
+
+.listings-legend div {
+  margin-top: 0.3rem;
+}
+
+.listings-legend .swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.listing-popup {
+  font-size: 0.85rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.listing-popup-address {
+  color: #666;
+  font-size: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+
+.listing-unit {
+  border-top: 1px solid #eee;
+  padding: 0.4rem 0;
+}
+
+.listing-unit a {
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.listing-unit a:hover {
+  text-decoration: underline;
+}
+
+.listing-unit-meta {
+  color: #555;
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}

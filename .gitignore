@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 scripts/.cache/
 .venv/
+.claude/scheduled_tasks.lock

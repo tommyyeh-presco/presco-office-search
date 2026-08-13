@@ -74,6 +74,154 @@ function addOfficeMarker(map) {
     .addTo(map);
 }
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+// Listing data was fetched with a 300坪 floor (see scripts/fetch_591_listings.js)
+// so the filter slider below can only raise the minimum, never lower it
+// below what's actually in data/listings.geo.json. Price ceilings are
+// rounded up from the actual data range for the same reason — the max
+// slider position must mean "no filter", not "hide the priciest listings".
+const MIN_AREA_FETCHED = 300;
+const MAX_RENT_PRICE = 20000000; // 元/月
+const MAX_SALE_PRICE = 310000; // 萬
+const TYPE_LABELS = { 1: "租", 2: "售" };
+
+let listingsGeojson = null;
+let listingsLayerGroup = null;
+let currentMinArea = MIN_AREA_FETCHED;
+let currentMaxRentPrice = MAX_RENT_PRICE;
+let currentMaxSalePrice = MAX_SALE_PRICE;
+
+function parsePrice(priceStr) {
+  return parseFloat(String(priceStr).replace(/,/g, "")) || 0;
+}
+
+function unitPassesFilters(unit) {
+  if (unit.area < currentMinArea) return false;
+  const price = parsePrice(unit.price);
+  if (unit.type === 1) return price <= currentMaxRentPrice;
+  if (unit.type === 2) return price <= currentMaxSalePrice;
+  return true;
+}
+
+function pinClassForUnits(units) {
+  const hasRent = units.some((u) => u.type === 1);
+  const hasSale = units.some((u) => u.type === 2);
+  if (hasRent && hasSale) return "listing-pin-mixed";
+  return hasSale ? "listing-pin-sale" : "listing-pin-rent";
+}
+
+function buildListingPopupHtml(props, units) {
+  const rows = units
+    .map(
+      (u) => `
+      <div class="listing-unit">
+        <a href="${escapeHtml(u.url)}" target="_blank" rel="noopener noreferrer">
+          [${escapeHtml(TYPE_LABELS[u.type] || "")}] ${escapeHtml(u.title)}
+        </a>
+        <div class="listing-unit-meta">
+          ${escapeHtml(u.floor_name || "")} · ${escapeHtml(u.area_name || "")} ·
+          ${escapeHtml(u.price || "")}${escapeHtml(u.price_unit || "")}
+        </div>
+      </div>`
+    )
+    .join("");
+  return (
+    `<div class="listing-popup">` +
+    `<strong>${escapeHtml(props.community_name || props.address)}</strong>` +
+    `<div class="listing-popup-address">${escapeHtml(props.address)}</div>` +
+    rows +
+    `</div>`
+  );
+}
+
+function renderListingPins() {
+  listingsLayerGroup.clearLayers();
+  for (const feature of listingsGeojson.features) {
+    const units = feature.properties.units.filter(unitPassesFilters);
+    if (units.length === 0) continue;
+    const [lng, lat] = feature.geometry.coordinates;
+    L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: `listing-pin ${pinClassForUnits(units)}`,
+        html: units.length > 1 ? `<span>${units.length}</span>` : "",
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+      }),
+    })
+      .bindPopup(buildListingPopupHtml(feature.properties, units), { maxWidth: 320 })
+      .addTo(listingsLayerGroup);
+  }
+}
+
+function addListingsFilterControl(map) {
+  const control = L.control({ position: "topright" });
+  control.onAdd = () => {
+    const div = L.DomUtil.create("div", "listings-filter");
+    div.innerHTML =
+      `<label>最小坪數：<span id="min-area-value">${currentMinArea}</span> 坪</label>` +
+      `<input type="range" id="min-area-slider" min="${MIN_AREA_FETCHED}" max="2000" step="50" value="${currentMinArea}">` +
+      `<label>最高月租金：<span id="max-rent-value">${currentMaxRentPrice.toLocaleString()}</span> 元/月</label>` +
+      `<input type="range" id="max-rent-slider" min="0" max="${MAX_RENT_PRICE}" step="50000" value="${currentMaxRentPrice}">` +
+      `<label>最高總價：<span id="max-sale-value">${currentMaxSalePrice.toLocaleString()}</span> 萬</label>` +
+      `<input type="range" id="max-sale-slider" min="0" max="${MAX_SALE_PRICE}" step="5000" value="${currentMaxSalePrice}">`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  };
+  control.addTo(map);
+
+  const minAreaSlider = document.getElementById("min-area-slider");
+  const minAreaLabel = document.getElementById("min-area-value");
+  minAreaSlider.addEventListener("input", () => {
+    currentMinArea = parseInt(minAreaSlider.value, 10);
+    minAreaLabel.textContent = currentMinArea;
+    renderListingPins();
+  });
+
+  const maxRentSlider = document.getElementById("max-rent-slider");
+  const maxRentLabel = document.getElementById("max-rent-value");
+  maxRentSlider.addEventListener("input", () => {
+    currentMaxRentPrice = parseInt(maxRentSlider.value, 10);
+    maxRentLabel.textContent = currentMaxRentPrice.toLocaleString();
+    renderListingPins();
+  });
+
+  const maxSaleSlider = document.getElementById("max-sale-slider");
+  const maxSaleLabel = document.getElementById("max-sale-value");
+  maxSaleSlider.addEventListener("input", () => {
+    currentMaxSalePrice = parseInt(maxSaleSlider.value, 10);
+    maxSaleLabel.textContent = currentMaxSalePrice.toLocaleString();
+    renderListingPins();
+  });
+}
+
+function addListingsLegend(map) {
+  const legend = L.control({ position: "bottomright" });
+  legend.onAdd = () => {
+    const div = L.DomUtil.create("div", "legend listings-legend");
+    div.innerHTML =
+      "<strong>物件標記</strong>" +
+      '<div><span class="swatch listing-pin-rent"></span>出租</div>' +
+      '<div><span class="swatch listing-pin-sale"></span>出售</div>' +
+      '<div><span class="swatch listing-pin-mixed"></span>租售皆有</div>';
+    return div;
+  };
+  legend.addTo(map);
+}
+
+async function addListings(map) {
+  const response = await fetch("data/listings.geo.json");
+  listingsGeojson = await response.json();
+  listingsLayerGroup = L.layerGroup().addTo(map);
+  renderListingPins();
+  addListingsFilterControl(map);
+  addListingsLegend(map);
+}
+
 async function addMrtLines(map) {
   const response = await fetch("data/mrt.geo.json");
   const geojson = await response.json();
@@ -135,6 +283,7 @@ async function initMap() {
   const taipeiBounds = await addCountyOutlines(map);
   addMrtLines(map);
   addOfficeMarker(map);
+  addListings(map);
 
   // The map container is unhidden in the same tick as initMap() runs (the
   // password gate reveals #app right before dispatching the "presco:authed"
