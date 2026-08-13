@@ -111,60 +111,37 @@ header h1 {
   border: none !important;
   box-shadow: none !important;
   display: flex !important;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  pointer-events: none;
-}
-
-.district-label-pin {
-  position: relative;
-  background: #ffffff;
-  border: 1.5px solid #4a5a6a;
-  border-radius: 9px;
-  padding: 2px 8px 4px;
   text-align: center;
   line-height: 1.15;
   white-space: nowrap;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-}
-
-.district-label-pin::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -8px;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 8px solid #4a5a6a;
-}
-
-.district-label-pin::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: -6px;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 5.5px solid transparent;
-  border-right: 5.5px solid transparent;
-  border-top: 6.5px solid #ffffff;
-  z-index: 1;
+  pointer-events: none;
 }
 
 .district-label-count {
-  font-weight: 700;
-  font-size: 20px;
+  font-weight: 800;
+  font-size: 22px;
   color: #0b2545;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 0 6px rgba(255, 255, 255, 0.85);
 }
 
 .district-label-name {
   font-weight: 700;
   font-size: 13px;
   color: #3a4a5c;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 0 4px rgba(255, 255, 255, 0.85);
 }
 
 .office-star {

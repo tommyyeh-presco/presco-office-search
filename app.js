@@ -542,12 +542,10 @@ async function initMap() {
           icon: L.divIcon({
             className: "district-label",
             html:
-              `<div class="district-label-pin">` +
               `<div class="district-label-count">${count}</div>` +
-              `<div class="district-label-name">${name}</div>` +
-              `</div>`,
-            iconSize: [90, 58],
-            iconAnchor: [45, 58],
+              `<div class="district-label-name">${name}</div>`,
+            iconSize: [90, 40],
+            iconAnchor: [45, 20],
           }),
           interactive: false,
         }).addTo(map);
