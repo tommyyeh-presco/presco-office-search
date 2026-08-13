@@ -71,6 +71,22 @@ def _district_from_address(address):
     return address.split("-")[0] if address else ""
 
 
+# Listings are only ever fetched for Taipei and New Taipei (see
+# scripts/fetch_591_listings.js), and Taipei's 12 district names don't
+# overlap with New Taipei's — including with the one Taiwan-wide
+# collision, Keelung's 中山區, since Keelung isn't in scope here — so
+# this set alone is enough to tell the two apart without a broader
+# district/county lookup table.
+TAIPEI_DISTRICTS = {
+    "中正區", "大同區", "中山區", "松山區", "大安區", "萬華區",
+    "信義區", "士林區", "北投區", "內湖區", "南港區", "文山區",
+}
+
+
+def _county_from_district(district):
+    return "台北市" if district in TAIPEI_DISTRICTS else "新北市"
+
+
 def _to_unit(listing):
     return {
         "id": listing["id"],
@@ -85,6 +101,10 @@ def _to_unit(listing):
         "area": listing.get("area"),
         "area_name": listing.get("area_name"),
         "tags": listing.get("tags", []),
+        "photos": listing.get("photoList", []),
+        "fitment_name": listing.get("fitment_name"),
+        "refresh_time": listing.get("refresh_time"),
+        "surrounding": listing.get("surrounding"),
     }
 
 
@@ -97,6 +117,18 @@ def _representative_text(listings, field):
         if value:
             return value
     return ""
+
+
+# A handful of postings report an area far outside any plausible single
+# floor/unit size (e.g. a "4-5 person shared office" listed at 15,000坪,
+# or a store space at 64,081坪) — several explicitly reveal why in their
+# own title, e.g. "89坪起至7904.72坪" ("from 89坪 up to 7904.72坪"): the
+# reported number is the top of a flexible, subdividable range, not one
+# unit's actual size. There's a clean gap in the real distribution
+# between the 99th percentile (~3,100坪) and the next value up (~7,000坪),
+# so anything past this ceiling is dropped as bad data rather than
+# guessed at.
+MAX_PLAUSIBLE_UNIT_AREA = 5000
 
 
 def _representative_community_name(listings):
@@ -120,7 +152,9 @@ def build_listings_geojson(raw_listings):
     distinct unit posted at that location."""
     located = [
         listing for listing in raw_listings
-        if listing.get("lat") is not None and listing.get("lng") is not None
+        if listing.get("lat") is not None
+        and listing.get("lng") is not None
+        and (listing.get("area") or 0) <= MAX_PLAUSIBLE_UNIT_AREA
     ]
     clusters = _cluster_by_proximity(located, COORD_GROUP_RADIUS_METERS)
 
@@ -141,12 +175,14 @@ def build_listings_geojson(raw_listings):
         lat = sum(listing["lat"] for listing in cluster) / len(cluster)
         lng = sum(listing["lng"] for listing in cluster) / len(cluster)
         address = _representative_text(cluster, "address")
+        district = _district_from_address(address)
 
         features.append({
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [lng, lat]},
             "properties": {
-                "district": _district_from_address(address),
+                "county": _county_from_district(district),
+                "district": district,
                 "address": address,
                 "community_name": _representative_community_name(cluster),
                 "units": units,

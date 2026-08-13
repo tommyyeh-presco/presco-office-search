@@ -6,6 +6,7 @@ const ZERO_BORDER_COLOR = "#b7c2cd";
 const ZERO_FILL_COLOR = "#eef3f8";
 const FILL_OPACITY = 0.6;
 const COUNTY_BORDER_COLOR = "#22303f";
+const BLACKOUT_COLOR = "#000000";
 
 function interpolateColor(t) {
   const rgb = LIGHT_RGB.map((c, i) => Math.round(c + (DARK_RGB[i] - c) * t));
@@ -33,6 +34,80 @@ function borderWeightForCount(count, maxCount) {
 function labelLatLng(feature) {
   const [lng, lat] = turf.pointOnFeature(feature).geometry.coordinates;
   return [lat, lng];
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
+// ---------------------------------------------------------------------
+// City visibility (layer menu: blackout + hide pins per county)
+// ---------------------------------------------------------------------
+
+const ALL_COUNTIES = ["台北市", "新北市", "桃園市", "基隆市", "宜蘭縣"];
+let hiddenCounties = new Set();
+let mapRef = null;
+let districtLayerRef = null;
+let maxCountRef = 1;
+let districtLabelMarkers = []; // [{ county, marker }]
+
+function districtStyle(feature) {
+  if (hiddenCounties.has(feature.properties.county)) {
+    return { fillColor: BLACKOUT_COLOR, fillOpacity: 1, color: BLACKOUT_COLOR, weight: 0.5 };
+  }
+  return {
+    fillColor: colorForCount(feature.properties.count, maxCountRef),
+    fillOpacity: FILL_OPACITY,
+    color: borderColorForCount(feature.properties.count, maxCountRef),
+    weight: borderWeightForCount(feature.properties.count, maxCountRef),
+  };
+}
+
+function applyCountyVisibility() {
+  if (districtLayerRef) {
+    districtLayerRef.eachLayer((lyr) => lyr.setStyle(districtStyle(lyr.feature)));
+  }
+  for (const { county, marker } of districtLabelMarkers) {
+    const shouldShow = !hiddenCounties.has(county);
+    const isShown = mapRef.hasLayer(marker);
+    if (shouldShow && !isShown) marker.addTo(mapRef);
+    if (!shouldShow && isShown) mapRef.removeLayer(marker);
+  }
+  renderListingPins();
+}
+
+function addLayerMenu(map) {
+  const control = L.control({ position: "topleft" });
+  control.onAdd = () => {
+    const div = L.DomUtil.create("div", "layer-menu");
+    div.innerHTML =
+      `<button type="button" id="layer-menu-toggle" class="layer-menu-button">☰ 圖層</button>` +
+      `<div id="layer-menu-panel" class="layer-menu-panel" hidden>` +
+      `<div class="layer-menu-title">隱藏城市（塗黑並移除物件）</div>` +
+      ALL_COUNTIES.map(
+        (c) =>
+          `<label class="layer-menu-item"><input type="checkbox" class="county-toggle" value="${c}" checked> ${c}</label>`
+      ).join("") +
+      `</div>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  };
+  control.addTo(map);
+
+  document.getElementById("layer-menu-toggle").addEventListener("click", () => {
+    const panel = document.getElementById("layer-menu-panel");
+    panel.hidden = !panel.hidden;
+  });
+
+  document.querySelectorAll(".county-toggle").forEach((checkbox) => {
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) hiddenCounties.delete(checkbox.value);
+      else hiddenCounties.add(checkbox.value);
+      applyCountyVisibility();
+    });
+  });
 }
 
 async function addCountyOutlines(map) {
@@ -74,11 +149,9 @@ function addOfficeMarker(map) {
     .addTo(map);
 }
 
-function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (c) => (
-    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
-  ));
-}
+// ---------------------------------------------------------------------
+// Listings: filters, pins, popup, and the detail sidebar
+// ---------------------------------------------------------------------
 
 // Listing data was fetched with a 300坪 floor (see scripts/fetch_591_listings.js)
 // so the filter slider below can only raise the minimum, never lower it
@@ -87,26 +160,34 @@ function escapeHtml(value) {
 // slider position must mean "no filter", not "hide the priciest listings".
 const MIN_AREA_FETCHED = 300;
 const MAX_RENT_PRICE = 20000000; // 元/月
-const MAX_SALE_PRICE = 310000; // 萬
+const MAX_SALE_PRICE = 310000; // 萬 — internal unit, matches unit.price
+const MAX_SALE_PRICE_YI = 31; // 億 — the slider's displayed unit (1億 = 10,000萬)
+const MAX_RENT_UNIT_PRICE = 7000; // 元/坪/月
+const MAX_SALE_UNIT_PRICE = 200; // 萬/坪
 const TYPE_LABELS = { 1: "租", 2: "售" };
 
 let listingsGeojson = null;
 let listingsLayerGroup = null;
+let unitsById = new Map();
 // Default reflects the actual space need (800坪), combinable across floors
 // of the same building — not a single-unit minimum. The slider can still
 // go down to the data floor or up higher, per "filter even higher" later.
 let currentMinArea = 800;
 let currentMaxRentPrice = MAX_RENT_PRICE;
 let currentMaxSalePrice = MAX_SALE_PRICE;
+let currentMaxRentUnitPrice = MAX_RENT_UNIT_PRICE;
+let currentMaxSaleUnitPrice = MAX_SALE_UNIT_PRICE;
 
 function parsePrice(priceStr) {
   return parseFloat(String(priceStr).replace(/,/g, "")) || 0;
 }
 
-function unitPassesPriceFilter(unit) {
-  const price = parsePrice(unit.price);
-  if (unit.type === 1) return price <= currentMaxRentPrice;
-  if (unit.type === 2) return price <= currentMaxSalePrice;
+// Unit-price (per-坪) caps are a rate, not a combinable total — checked
+// per unit regardless of whether it ends up in a combined group.
+function unitPassesUnitPriceFilter(unit) {
+  const unitPrice = unit.price_per || 0;
+  if (unit.type === 1) return unitPrice <= currentMaxRentUnitPrice;
+  if (unit.type === 2) return unitPrice <= currentMaxSaleUnitPrice;
   return true;
 }
 
@@ -125,15 +206,23 @@ function combinableGroups(units) {
 }
 
 // Returns the units from whichever combinable groups meet currentMinArea
-// (as a combined total), after dropping units that fail the price filter
-// on their own — only units that are individually affordable get counted
-// toward a combined total.
+// AND whose combined total price stays within the max-price slider — the
+// total price is the sum across every unit in the group, since renting
+// two floors together costs the sum of both, not just the pricier one.
 function qualifyingUnits(allUnits) {
-  const priceOk = allUnits.filter(unitPassesPriceFilter);
   const qualifying = [];
-  for (const group of combinableGroups(priceOk)) {
-    const total = group.reduce((sum, u) => sum + u.area, 0);
-    if (total >= currentMinArea) qualifying.push(...group);
+  for (const rawGroup of combinableGroups(allUnits)) {
+    const group = rawGroup.filter(unitPassesUnitPriceFilter);
+    if (group.length === 0) continue;
+
+    const totalArea = group.reduce((sum, u) => sum + u.area, 0);
+    if (totalArea < currentMinArea) continue;
+
+    const totalPrice = group.reduce((sum, u) => sum + parsePrice(u.price), 0);
+    const maxPrice = group[0].type === 1 ? currentMaxRentPrice : currentMaxSalePrice;
+    if (totalPrice > maxPrice) continue;
+
+    qualifying.push(...group);
   }
   return qualifying;
 }
@@ -148,7 +237,7 @@ function pinClassForUnits(units) {
 function unitRowHtml(u) {
   return `
       <div class="listing-unit">
-        <a href="${escapeHtml(u.url)}" target="_blank" rel="noopener noreferrer">
+        <a href="#" onclick="openListingSidebar(${u.id}); return false;">
           [${escapeHtml(TYPE_LABELS[u.type] || "")}] ${escapeHtml(u.title)}
         </a>
         <div class="listing-unit-meta">
@@ -161,10 +250,12 @@ function unitRowHtml(u) {
 function buildListingPopupHtml(props, units) {
   const sections = combinableGroups(units)
     .map((group) => {
-      const total = group.reduce((sum, u) => sum + u.area, 0);
+      const totalArea = group.reduce((sum, u) => sum + u.area, 0);
+      const totalPrice = group.reduce((sum, u) => sum + parsePrice(u.price), 0);
+      const priceUnit = group[0].price_unit || "";
       const combinedNote =
         group.length > 1
-          ? `<div class="listing-combined-note">可合併${escapeHtml(TYPE_LABELS[group[0].type] || "")}：共 ${total.toFixed(1)} 坪（${group.length} 個樓層）</div>`
+          ? `<div class="listing-combined-note">可合併${escapeHtml(TYPE_LABELS[group[0].type] || "")}：共 ${totalArea.toFixed(1)} 坪，總${escapeHtml(TYPE_LABELS[group[0].type] === "售" ? "價" : "租金")} ${totalPrice.toLocaleString()}${escapeHtml(priceUnit)}（${group.length} 個樓層）</div>`
           : "";
       return combinedNote + group.map(unitRowHtml).join("");
     })
@@ -181,6 +272,7 @@ function buildListingPopupHtml(props, units) {
 function renderListingPins() {
   listingsLayerGroup.clearLayers();
   for (const feature of listingsGeojson.features) {
+    if (hiddenCounties.has(feature.properties.county)) continue;
     const units = qualifyingUnits(feature.properties.units);
     if (units.length === 0) continue;
     const [lng, lat] = feature.geometry.coordinates;
@@ -204,38 +296,44 @@ function addListingsFilterControl(map) {
     div.innerHTML =
       `<label>最小總坪數（可合併樓層）：<span id="min-area-value">${currentMinArea}</span> 坪</label>` +
       `<input type="range" id="min-area-slider" min="${MIN_AREA_FETCHED}" max="3000" step="50" value="${currentMinArea}">` +
-      `<label>最高月租金：<span id="max-rent-value">${currentMaxRentPrice.toLocaleString()}</span> 元/月</label>` +
+      `<label>最高月租金（合併總額）：<span id="max-rent-value">${currentMaxRentPrice.toLocaleString()}</span> 元/月</label>` +
       `<input type="range" id="max-rent-slider" min="0" max="${MAX_RENT_PRICE}" step="50000" value="${currentMaxRentPrice}">` +
-      `<label>最高總價：<span id="max-sale-value">${currentMaxSalePrice.toLocaleString()}</span> 萬</label>` +
-      `<input type="range" id="max-sale-slider" min="0" max="${MAX_SALE_PRICE}" step="5000" value="${currentMaxSalePrice}">`;
+      `<label>最高租金單價：<span id="max-rent-unit-value">${currentMaxRentUnitPrice.toLocaleString()}</span> 元/坪/月</label>` +
+      `<input type="range" id="max-rent-unit-slider" min="0" max="${MAX_RENT_UNIT_PRICE}" step="100" value="${currentMaxRentUnitPrice}">` +
+      `<label>最高總價（合併總額）：<span id="max-sale-value">${(currentMaxSalePrice / 10000).toFixed(1)}</span> 億</label>` +
+      `<input type="range" id="max-sale-slider" min="0" max="${MAX_SALE_PRICE_YI}" step="0.5" value="${currentMaxSalePrice / 10000}">` +
+      `<label>最高售價單價：<span id="max-sale-unit-value">${currentMaxSaleUnitPrice.toLocaleString()}</span> 萬/坪</label>` +
+      `<input type="range" id="max-sale-unit-slider" min="0" max="${MAX_SALE_UNIT_PRICE}" step="5" value="${currentMaxSaleUnitPrice}">`;
     L.DomEvent.disableClickPropagation(div);
     return div;
   };
   control.addTo(map);
 
-  const minAreaSlider = document.getElementById("min-area-slider");
-  const minAreaLabel = document.getElementById("min-area-value");
-  minAreaSlider.addEventListener("input", () => {
-    currentMinArea = parseInt(minAreaSlider.value, 10);
-    minAreaLabel.textContent = currentMinArea;
-    renderListingPins();
-  });
+  const bindSlider = (sliderId, labelId, apply, options = {}) => {
+    const parse = options.parse || ((v) => parseInt(v, 10));
+    const format = options.format || ((v) => v.toLocaleString());
+    const slider = document.getElementById(sliderId);
+    const label = document.getElementById(labelId);
+    slider.addEventListener("input", () => {
+      const value = parse(slider.value);
+      label.textContent = format(value);
+      apply(value);
+      renderListingPins();
+    });
+  };
 
-  const maxRentSlider = document.getElementById("max-rent-slider");
-  const maxRentLabel = document.getElementById("max-rent-value");
-  maxRentSlider.addEventListener("input", () => {
-    currentMaxRentPrice = parseInt(maxRentSlider.value, 10);
-    maxRentLabel.textContent = currentMaxRentPrice.toLocaleString();
-    renderListingPins();
+  bindSlider("min-area-slider", "min-area-value", (v) => (currentMinArea = v));
+  bindSlider("max-rent-slider", "max-rent-value", (v) => (currentMaxRentPrice = v));
+  bindSlider("max-rent-unit-slider", "max-rent-unit-value", (v) => (currentMaxRentUnitPrice = v));
+  // Sale total price is shown/entered in 億 (1億 = 10,000萬) since raw 萬
+  // values are hard to read at this scale, but stored internally in 萬
+  // (currentMaxSalePrice) to compare directly against unit.price, which
+  // 591 reports in 萬.
+  bindSlider("max-sale-slider", "max-sale-value", (v) => (currentMaxSalePrice = v * 10000), {
+    parse: (v) => parseFloat(v),
+    format: (v) => v.toFixed(1),
   });
-
-  const maxSaleSlider = document.getElementById("max-sale-slider");
-  const maxSaleLabel = document.getElementById("max-sale-value");
-  maxSaleSlider.addEventListener("input", () => {
-    currentMaxSalePrice = parseInt(maxSaleSlider.value, 10);
-    maxSaleLabel.textContent = currentMaxSalePrice.toLocaleString();
-    renderListingPins();
-  });
+  bindSlider("max-sale-unit-slider", "max-sale-unit-value", (v) => (currentMaxSaleUnitPrice = v));
 }
 
 function addListingsLegend(map) {
@@ -252,9 +350,69 @@ function addListingsLegend(map) {
   legend.addTo(map);
 }
 
+function indexUnits(geojson) {
+  unitsById.clear();
+  for (const feature of geojson.features) {
+    for (const unit of feature.properties.units) {
+      unitsById.set(unit.id, {
+        ...unit,
+        community_name: feature.properties.community_name,
+        address: feature.properties.address,
+      });
+    }
+  }
+}
+
+function buildSidebarHtml(unit) {
+  const photos = (unit.photos || [])
+    .map((url) => `<img src="${escapeHtml(url)}" alt="" loading="lazy">`)
+    .join("");
+  const tags = (unit.tags || [])
+    .map((t) => `<span class="sidebar-tag">${escapeHtml(t)}</span>`)
+    .join("");
+  const nearby =
+    unit.surrounding && unit.surrounding.desc
+      ? `<div class="sidebar-fact"><span>鄰近</span><span>${escapeHtml(unit.surrounding.desc)} ${escapeHtml(unit.surrounding.distance || "")}</span></div>`
+      : "";
+  const unitPrice = unit.price_per
+    ? `<span class="sidebar-unit-price">(${unit.price_per}${escapeHtml(unit.price_per_unit || "")})</span>`
+    : "";
+
+  return (
+    `<div class="sidebar-photos">${photos || '<div class="sidebar-no-photo">無照片</div>'}</div>` +
+    `<div class="sidebar-body">` +
+    `<span class="sidebar-type-badge">${escapeHtml(TYPE_LABELS[unit.type] || "")}</span>` +
+    `<h3>${escapeHtml(unit.title)}</h3>` +
+    `<div class="sidebar-community">${escapeHtml(unit.community_name || unit.address || "")}</div>` +
+    `<div class="sidebar-price">${escapeHtml(unit.price || "")}${escapeHtml(unit.price_unit || "")} ${unitPrice}</div>` +
+    `<div class="sidebar-facts">` +
+    `<div class="sidebar-fact"><span>樓層</span><span>${escapeHtml(unit.floor_name || "")}</span></div>` +
+    `<div class="sidebar-fact"><span>坪數</span><span>${escapeHtml(unit.area_name || "")}</span></div>` +
+    `<div class="sidebar-fact"><span>裝潢</span><span>${escapeHtml(unit.fitment_name || "")}</span></div>` +
+    `<div class="sidebar-fact"><span>更新</span><span>${escapeHtml(unit.refresh_time || "")}</span></div>` +
+    nearby +
+    `</div>` +
+    `<div class="sidebar-tags">${tags}</div>` +
+    `<a href="${escapeHtml(unit.url)}" target="_blank" rel="noopener noreferrer" class="sidebar-591-link">在591查看完整資訊 →</a>` +
+    `</div>`
+  );
+}
+
+function openListingSidebar(unitId) {
+  const unit = unitsById.get(unitId);
+  if (!unit) return;
+  document.getElementById("listing-sidebar-content").innerHTML = buildSidebarHtml(unit);
+  document.getElementById("listing-sidebar").classList.add("open");
+}
+
+function closeListingSidebar() {
+  document.getElementById("listing-sidebar").classList.remove("open");
+}
+
 async function addListings(map) {
   const response = await fetch("data/listings.geo.json");
   listingsGeojson = await response.json();
+  indexUnits(listingsGeojson);
   listingsLayerGroup = L.layerGroup().addTo(map);
   renderListingPins();
   addListingsFilterControl(map);
@@ -278,6 +436,7 @@ async function addMrtLines(map) {
 
 async function initMap() {
   const map = L.map("map");
+  mapRef = map;
   // Minimal, near-monochrome basemap — just roads (no colored land/water
   // fill, no labels/POI/building clutter) so the district choropleth and
   // MRT overlay stay legible.
@@ -289,20 +448,15 @@ async function initMap() {
 
   const response = await fetch("data/districts.geo.json");
   const geojson = await response.json();
-  const maxCount = Math.max(...geojson.features.map((f) => f.properties.count));
+  maxCountRef = Math.max(...geojson.features.map((f) => f.properties.count));
 
   const districtLayer = L.geoJSON(geojson, {
-    style: (feature) => ({
-      fillColor: colorForCount(feature.properties.count, maxCount),
-      fillOpacity: FILL_OPACITY,
-      color: borderColorForCount(feature.properties.count, maxCount),
-      weight: borderWeightForCount(feature.properties.count, maxCount),
-    }),
+    style: districtStyle,
     onEachFeature: (feature, lyr) => {
       const { name, county, count } = feature.properties;
       lyr.bindTooltip(`${county}${name}：${count} 人`, { sticky: true });
       if (count > 0) {
-        L.marker(labelLatLng(feature), {
+        const marker = L.marker(labelLatLng(feature), {
           icon: L.divIcon({
             className: "district-label",
             html:
@@ -315,14 +469,19 @@ async function initMap() {
           }),
           interactive: false,
         }).addTo(map);
+        districtLabelMarkers.push({ county, marker });
       }
     },
   }).addTo(map);
+  districtLayerRef = districtLayer;
 
   const taipeiBounds = await addCountyOutlines(map);
   addMrtLines(map);
   addOfficeMarker(map);
   addListings(map);
+  addLayerMenu(map);
+
+  document.getElementById("listing-sidebar-close").addEventListener("click", closeListingSidebar);
 
   // The map container is unhidden in the same tick as initMap() runs (the
   // password gate reveals #app right before dispatching the "presco:authed"
@@ -340,7 +499,7 @@ async function initMap() {
     div.innerHTML =
       "<strong>員工人數</strong>" +
       '<div class="legend-gradient"></div>' +
-      `<div class="legend-scale"><span>0</span><span>${maxCount}</span></div>`;
+      `<div class="legend-scale"><span>0</span><span>${maxCountRef}</span></div>`;
     return div;
   };
   legend.addTo(map);

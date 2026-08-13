@@ -28,6 +28,10 @@ def _listing(
         "community_id": community_id,
         "address": address,
         "tags": [],
+        "photoList": ["https://img1.591.com.tw/house/example.jpg"],
+        "fitment_name": "簡易裝潢",
+        "refresh_time": "32分鐘內更新",
+        "surrounding": {"type": "subway", "desc": "距劍南路站", "distance": "510公尺"},
         "lat": lat,
         "lng": lng,
     }
@@ -82,6 +86,16 @@ def test_build_listings_geojson_separate_locations_get_separate_pins():
     assert len(result["features"]) == 2
 
 
+def test_build_listings_geojson_includes_photos_and_detail_fields():
+    raw = [_listing(1)]
+    result = build_listings_geojson(raw)
+    unit = result["features"][0]["properties"]["units"][0]
+    assert unit["photos"] == ["https://img1.591.com.tw/house/example.jpg"]
+    assert unit["fitment_name"] == "簡易裝潢"
+    assert unit["refresh_time"] == "32分鐘內更新"
+    assert unit["surrounding"] == {"type": "subway", "desc": "距劍南路站", "distance": "510公尺"}
+
+
 def test_build_listings_geojson_combines_same_building_listings_pinned_slightly_apart():
     # Regression test for a real case: two listings in the same 31-floor
     # building (板橋區 中山路一段, "馥華艾美"), posted by different
@@ -95,6 +109,13 @@ def test_build_listings_geojson_combines_same_building_listings_pinned_slightly_
     result = build_listings_geojson(raw)
     assert len(result["features"]) == 1
     assert len(result["features"][0]["properties"]["units"]) == 2
+
+
+def test_build_listings_geojson_derives_county_from_district():
+    taipei = build_listings_geojson([_listing(1, address="中山區-敬業二路")])
+    new_taipei = build_listings_geojson([_listing(2, address="板橋區-中山路一段")])
+    assert taipei["features"][0]["properties"]["county"] == "台北市"
+    assert new_taipei["features"][0]["properties"]["county"] == "新北市"
 
 
 def test_build_listings_geojson_does_not_merge_buildings_further_than_the_radius():
@@ -118,6 +139,27 @@ def test_build_listings_geojson_clusters_transitively_through_a_chain():
     result = build_listings_geojson(raw)
     assert len(result["features"]) == 1
     assert len(result["features"][0]["properties"]["units"]) == 3
+
+
+def test_build_listings_geojson_drops_implausible_area_values():
+    # Regression test: a listing titled "信義區商辦大樓雙車位~市府捷運站
+    # 旁｜~方正大室內遠觀101" reported 7504坪 for one floor (11F/19F) —
+    # far outside any plausible single-floor size. Should be dropped
+    # entirely rather than distorting combined-area totals.
+    raw = [
+        _listing(21713419, floor_name="11F/19F", area=7504),
+        _listing(2, floor_name="12F/19F", area=500),
+    ]
+    result = build_listings_geojson(raw)
+    all_ids = [u["id"] for f in result["features"] for u in f["properties"]["units"]]
+    assert 21713419 not in all_ids
+    assert 2 in all_ids
+
+
+def test_build_listings_geojson_keeps_plausible_large_areas():
+    raw = [_listing(1, area=3000)]
+    result = build_listings_geojson(raw)
+    assert len(result["features"]) == 1
 
 
 def test_build_listings_geojson_prefers_community_name_with_verified_id():
