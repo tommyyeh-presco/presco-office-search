@@ -99,15 +99,72 @@ header h1 {
   display: none;
 }
 
+/* Leaflet gives interactive paths tabindex=0 for keyboard a11y, so
+   clicking one draws the browser's default focus ring — a rectangle
+   around its bounding box, not its actual shape. Suppress that. */
+.leaflet-interactive:focus {
+  outline: none;
+}
+
 .district-label {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  display: flex !important;
+  align-items: flex-start;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.district-label-pin {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #4a5a6a;
+  border-radius: 7px;
+  padding: 1px 6px 2px;
+  text-align: center;
+  line-height: 1.15;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.district-label-pin::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #4a5a6a;
+}
+
+.district-label-pin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -4.5px;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #ffffff;
+  z-index: 1;
+}
+
+.district-label-count {
   font-weight: 700;
   font-size: 12px;
   color: #0b2545;
-  text-align: center;
-  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+}
+
+.district-label-name {
+  font-weight: 600;
+  font-size: 8px;
+  color: #3a4a5c;
 }
 
 .legend {
