@@ -263,9 +263,11 @@ function buildListingPopupHtml(props, units) {
       const totalArea = group.reduce((sum, u) => sum + u.area, 0);
       const totalPrice = group.reduce((sum, u) => sum + parsePrice(u.price), 0);
       const priceUnit = group[0].price_unit || "";
+      const avgUnitPrice = totalArea > 0 ? totalPrice / totalArea : 0;
+      const unitPriceUnit = group[0].price_per_unit || "";
       const combinedNote =
         group.length > 1
-          ? `<div class="listing-combined-note">可合併${escapeHtml(TYPE_LABELS[group[0].type] || "")}：共 ${totalArea.toFixed(1)} 坪，總${escapeHtml(TYPE_LABELS[group[0].type] === "售" ? "價" : "租金")} ${totalPrice.toLocaleString()}${escapeHtml(priceUnit)}（${group.length} 個樓層）</div>`
+          ? `<div class="listing-combined-note">可合併${escapeHtml(TYPE_LABELS[group[0].type] || "")}：共 ${totalArea.toFixed(1)} 坪，總${escapeHtml(TYPE_LABELS[group[0].type] === "售" ? "價" : "租金")} ${totalPrice.toLocaleString()}${escapeHtml(priceUnit)}，平均 ${avgUnitPrice.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}${escapeHtml(unitPriceUnit)}（${group.length} 個樓層）</div>`
           : "";
       return combinedNote + group.map(unitRowHtml).join("");
     })
