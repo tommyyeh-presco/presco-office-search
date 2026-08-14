@@ -247,32 +247,42 @@ header h1 {
   text-align: right;
 }
 
-.county-expanded-group {
-  margin-top: 0.6rem;
+.county-bars-expanded-grid {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
 }
 
-.county-expanded-group:first-child {
-  margin-top: 0;
+.county-expanded-group {
+  flex: 0 0 auto;
 }
 
 .county-expanded-title {
+  display: flex;
+  flex-direction: column;
   font-weight: 700;
   font-size: 0.75rem;
   color: #333;
   margin-bottom: 0.25rem;
 }
 
+.county-expanded-total {
+  font-weight: 400;
+  font-size: 0.68rem;
+  color: #888;
+}
+
 .district-bar-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-top: 0.2rem;
 }
 
 .district-bar-label {
-  width: 56px;
+  width: 44px;
   flex-shrink: 0;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: #444;
   white-space: nowrap;
   overflow: hidden;
@@ -280,7 +290,7 @@ header h1 {
 }
 
 .district-bar-track {
-  width: 120px;
+  width: 64px;
   flex-shrink: 0;
   background: #eef3f8;
   border-radius: 3px;

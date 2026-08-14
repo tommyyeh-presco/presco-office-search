@@ -599,10 +599,10 @@ function countyBarsExpandedHtml(geojson) {
     byCounty.get(county).push({ name, count });
   }
 
-  return COUNTY_DISPLAY_ORDER.map((county) => {
-    const withEmployees = (byCounty.get(county) || [])
-      .filter((d) => d.count > 0)
-      .sort((a, b) => b.count - a.count);
+  const groups = COUNTY_DISPLAY_ORDER.map((county) => {
+    const allDistricts = byCounty.get(county) || [];
+    const total = allDistricts.reduce((sum, d) => sum + d.count, 0);
+    const withEmployees = allDistricts.filter((d) => d.count > 0).sort((a, b) => b.count - a.count);
     const shown = withEmployees.slice(0, MAX_DISTRICTS_PER_COUNTY);
     const remaining = withEmployees.length - shown.length;
 
@@ -624,10 +624,12 @@ function countyBarsExpandedHtml(geojson) {
 
     return (
       `<div class="county-expanded-group">` +
-      `<div class="county-expanded-title">${escapeHtml(county)}</div>` +
+      `<div class="county-expanded-title">${escapeHtml(county)}<span class="county-expanded-total">共 ${total} 人</span></div>` +
       rows +
       moreNote +
       `</div>`
     );
   }).join("");
+
+  return `<div class="county-bars-expanded-grid">${groups}</div>`;
 }
