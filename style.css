@@ -128,18 +128,6 @@ header h1 {
     0 0 4px rgba(255, 255, 255, 0.85);
 }
 
-.district-label-price {
-  font-weight: 700;
-  font-size: 11px;
-  color: #7a3b00;
-  text-shadow:
-    -1px -1px 0 #fff,
-    1px -1px 0 #fff,
-    -1px 1px 0 #fff,
-    1px 1px 0 #fff,
-    0 0 4px rgba(255, 255, 255, 0.85);
-}
-
 .office-star {
   color: #ffcc00;
   font-size: 34px;
