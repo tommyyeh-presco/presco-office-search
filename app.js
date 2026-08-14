@@ -250,7 +250,7 @@ function renderListingPins() {
 // 顯示項目 card added by addLayersPanel — this card hides itself only
 // when neither listing type is toggled on there.
 function addListingsPanel(map) {
-  const control = L.control({ position: "topright" });
+  const control = L.control({ position: "topleft" });
   control.onAdd = () => {
     const div = L.DomUtil.create("div", "listings-panel");
     div.innerHTML =
