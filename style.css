@@ -218,13 +218,10 @@ header h1 {
 .county-bars-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  margin-top: 0.6rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #eee;
+  gap: 0.5rem;
   color: #444;
   font-size: 0.75rem;
+  font-weight: 700;
 }
 
 .county-bars-toggle-btn {
@@ -232,9 +229,10 @@ header h1 {
   border: none;
   padding: 0;
   color: var(--brand);
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  line-height: 1;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 #county-bars-container {

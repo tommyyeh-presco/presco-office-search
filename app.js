@@ -517,27 +517,42 @@ async function initMap() {
     map.fitBounds(taipeiBounds || districtLayer.getBounds(), { padding: [160, 160] });
   });
 
+  // Two separate bottom-right cards, not one: the gradient's width shouldn't
+  // stretch every time the breakdown card below it expands/collapses. Leaflet
+  // stacks bottom-corner controls with the most-recently-added one on top, so
+  // the breakdown card is added first to put the gradient card above it.
   let countyBarsExpanded = false;
-  const legend = L.control({ position: "bottomright" });
-  legend.onAdd = () => {
-    const div = L.DomUtil.create("div", "legend");
+  const breakdownLegend = L.control({ position: "bottomright" });
+  breakdownLegend.onAdd = () => {
+    const div = L.DomUtil.create("div", "legend county-breakdown-card");
     div.innerHTML =
-      "<strong>員工人數</strong>" +
-      '<div class="legend-gradient"></div>' +
-      `<div class="legend-scale"><span>0</span><span>${maxCountRef}</span></div>` +
       `<div class="county-bars-header">` +
+      `<button type="button" id="county-bars-toggle" class="county-bars-toggle-btn" aria-label="展開">▶</button>` +
       `<span>依區域分佈</span>` +
-      `<button type="button" id="county-bars-toggle" class="county-bars-toggle-btn">展開 ▾</button>` +
       `</div>` +
       `<div id="county-bars-container">${countyBarsHtml(geojson)}</div>`;
     L.DomEvent.disableClickPropagation(div);
     return div;
   };
-  legend.addTo(map);
+  breakdownLegend.addTo(map);
+
+  const gradientLegend = L.control({ position: "bottomright" });
+  gradientLegend.onAdd = () => {
+    const div = L.DomUtil.create("div", "legend");
+    div.innerHTML =
+      "<strong>員工人數</strong>" +
+      '<div class="legend-gradient"></div>' +
+      `<div class="legend-scale"><span>0</span><span>${maxCountRef}</span></div>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  };
+  gradientLegend.addTo(map);
 
   document.getElementById("county-bars-toggle").addEventListener("click", () => {
     countyBarsExpanded = !countyBarsExpanded;
-    document.getElementById("county-bars-toggle").textContent = countyBarsExpanded ? "收合 ▴" : "展開 ▾";
+    const toggle = document.getElementById("county-bars-toggle");
+    toggle.textContent = countyBarsExpanded ? "▼" : "▶";
+    toggle.setAttribute("aria-label", countyBarsExpanded ? "收合" : "展開");
     document.getElementById("county-bars-container").innerHTML = countyBarsExpanded
       ? countyBarsExpandedHtml(geojson)
       : countyBarsHtml(geojson);
