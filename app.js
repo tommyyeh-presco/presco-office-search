@@ -538,7 +538,6 @@ async function initMap() {
     style: districtStyle,
     onEachFeature: (feature, lyr) => {
       const { name, county, count } = feature.properties;
-      lyr.bindTooltip(`${county}${name}：${count} 人`, { sticky: true });
       if (count > 0) {
         const marker = L.marker(labelLatLng(feature), {
           icon: L.divIcon({
