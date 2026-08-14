@@ -353,16 +353,20 @@ function computeDistrictAvgPrices() {
   return byDistrict;
 }
 
-// Builds whichever lines are currently enabled for one district's label —
-// employee count/name, average price, both, or neither (caller hides the
-// marker entirely when this returns an empty string).
+// Builds whichever lines are currently enabled for one district's label.
+// The district name itself is not gated by 居住地人數 — it's the "where
+// am I" line and stays on whenever the marker has anything else to show;
+// only the count number is controlled by that toggle. Caller hides the
+// marker entirely when this returns an empty string (nothing to show at
+// all — e.g. 0 employees and no qualifying listings).
 function districtLabelContent(feature, avgPrices) {
   const { name, county, count } = feature.properties;
-  const lines = [];
-  if (employeeCountVisible && count > 0) {
-    lines.push(`<div class="district-label-count">${count}</div>`);
-    lines.push(`<div class="district-label-name">${name}</div>`);
-  }
+
+  const countLine = employeeCountVisible && count > 0
+    ? `<div class="district-label-count">${count}</div>`
+    : "";
+
+  let priceLine = "";
   if (avgPriceVisible && avgPrices) {
     const agg = avgPrices.get(`${county}|${name}`);
     if (agg) {
@@ -374,11 +378,15 @@ function districtLabelContent(feature, avgPrices) {
         parts.push(`售 ${(agg.saleSum / agg.saleCount).toFixed(1)}萬/坪`);
       }
       if (parts.length > 0) {
-        lines.push(`<div class="district-label-price">${parts.join(" · ")}</div>`);
+        priceLine = `<div class="district-label-price">${parts.join(" · ")}</div>`;
       }
     }
   }
-  return lines.join("");
+
+  if (!countLine && !priceLine && count === 0) return "";
+
+  const nameLine = `<div class="district-label-name">${name}</div>`;
+  return countLine + nameLine + priceLine;
 }
 
 // Rebuilds every district label's content from current toggle state, and
