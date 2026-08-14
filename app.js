@@ -604,9 +604,6 @@ async function addMrtLines(map) {
       weight: 3,
       opacity: 0.9,
     }),
-    onEachFeature: (feature, lyr) => {
-      lyr.bindTooltip(feature.properties.name, { sticky: true });
-    },
   }).addTo(map);
 }
 
