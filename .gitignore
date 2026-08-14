@@ -5,3 +5,9 @@ __pycache__/
 scripts/.cache/
 .venv/
 .claude/scheduled_tasks.lock
+
+# Staging area for raw reference photos the user drops in — only the
+# processed/resized versions actually used by the site (assets/renovation/)
+# are tracked.
+/assets/*
+!/assets/renovation/

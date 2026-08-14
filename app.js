@@ -683,13 +683,16 @@ const SPACE_BENCHMARK_DATA = [
   { label: "SAP", value: 7.3 },
   { label: "Google", value: 7.7 },
   { label: "Microsoft", value: 10.5 },
-  { label: "MediaTek*", value: 15.1, caveat: true },
 ];
 
-// Employees per meeting room — lower is more generously staffed.
+// Employees per meeting room — lower is more generously staffed. Atlassian
+// and Meta figures are each from one specific (small) office, not a full
+// HQ campus — noted in the surrounding copy, not fabricated averages.
 const ROOM_BENCHMARK_DATA = [
   { label: "Presco（現況）", value: 25.6, highlight: true },
+  { label: "Atlassian（舊金山）", value: 25 },
   { label: "NVIDIA（Endeavor）", value: 12.5 },
+  { label: "Meta（Denver）*", value: 4.3, caveat: true },
 ];
 
 function renderBenchmarkChart(containerId, data) {
