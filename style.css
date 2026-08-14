@@ -177,6 +177,56 @@ header h1 {
   color: #555;
 }
 
+.county-bars {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
+}
+
+.county-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0.3rem;
+}
+
+.county-bar-label {
+  width: 42px;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: #444;
+}
+
+.county-bar-track {
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.county-bar-fill {
+  display: flex;
+  height: 12px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: #eef3f8;
+}
+
+.county-bar-segment {
+  height: 100%;
+  border-right: 1px solid #fff;
+}
+
+.county-bar-segment:last-child {
+  border-right: none;
+}
+
+.county-bar-total {
+  width: 22px;
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: #555;
+  text-align: right;
+}
+
 .listing-pin {
   display: flex;
   align-items: center;
@@ -204,12 +254,27 @@ header h1 {
   background: linear-gradient(135deg, #2563eb 50%, #c2410c 50%);
 }
 
-.listings-filter {
+.listings-panel {
   background: #fff;
   padding: 0.5rem 0.7rem;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   font-size: 0.8rem;
+}
+
+.listings-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  color: #222;
+  cursor: pointer;
+}
+
+#listings-panel-body {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
 }
 
 .listings-filter label {
@@ -224,6 +289,12 @@ header h1 {
 
 .listings-filter input[type="range"] {
   width: 180px;
+}
+
+.listings-legend {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #eee;
 }
 
 .listings-legend div {
@@ -303,51 +374,6 @@ header h1 {
   color: #555;
   font-size: 0.78rem;
   margin-top: 0.15rem;
-}
-
-/* Layer menu (city blackout toggles) */
-
-.layer-menu {
-  position: relative;
-}
-
-.layer-menu-button {
-  background: #fff;
-  border: none;
-  padding: 0.5rem 0.8rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.layer-menu-panel {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  padding: 0.6rem 0.8rem;
-  font-size: 0.8rem;
-  min-width: 200px;
-}
-
-.layer-menu-title {
-  font-weight: 700;
-  margin-bottom: 0.4rem;
-  color: #333;
-}
-
-.layer-menu-item {
-  display: block;
-  padding: 0.2rem 0;
-  cursor: pointer;
-}
-
-.layer-menu-divider {
-  border-top: 1px solid #eee;
-  margin: 0.5rem 0;
 }
 
 /* Listing detail sidebar */

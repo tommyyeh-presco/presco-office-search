@@ -6,7 +6,6 @@ const ZERO_BORDER_COLOR = "#b7c2cd";
 const ZERO_FILL_COLOR = "#eef3f8";
 const FILL_OPACITY = 0.6;
 const COUNTY_BORDER_COLOR = "#22303f";
-const BLACKOUT_COLOR = "#000000";
 
 function interpolateColor(t) {
   const rgb = LIGHT_RGB.map((c, i) => Math.round(c + (DARK_RGB[i] - c) * t));
@@ -43,78 +42,21 @@ function escapeHtml(value) {
 }
 
 // ---------------------------------------------------------------------
-// City visibility (layer menu: blackout + hide pins per county)
+// District choropleth
 // ---------------------------------------------------------------------
 
-const ALL_COUNTIES = ["台北市", "新北市", "桃園市", "基隆市", "宜蘭縣"];
-let hiddenCounties = new Set();
+const COUNTY_DISPLAY_ORDER = ["台北市", "新北市", "桃園市", "基隆市", "宜蘭縣"];
 let mapRef = null;
 let districtLayerRef = null;
 let maxCountRef = 1;
-let districtLabelMarkers = []; // [{ county, marker }]
 
 function districtStyle(feature) {
-  if (hiddenCounties.has(feature.properties.county)) {
-    return { fillColor: BLACKOUT_COLOR, fillOpacity: 1, color: BLACKOUT_COLOR, weight: 0.5 };
-  }
   return {
     fillColor: colorForCount(feature.properties.count, maxCountRef),
     fillOpacity: FILL_OPACITY,
     color: borderColorForCount(feature.properties.count, maxCountRef),
     weight: borderWeightForCount(feature.properties.count, maxCountRef),
   };
-}
-
-function applyCountyVisibility() {
-  if (districtLayerRef) {
-    districtLayerRef.eachLayer((lyr) => lyr.setStyle(districtStyle(lyr.feature)));
-  }
-  for (const { county, marker } of districtLabelMarkers) {
-    const shouldShow = !hiddenCounties.has(county);
-    const isShown = mapRef.hasLayer(marker);
-    if (shouldShow && !isShown) marker.addTo(mapRef);
-    if (!shouldShow && isShown) mapRef.removeLayer(marker);
-  }
-  renderListingPins();
-}
-
-function addLayerMenu(map) {
-  const control = L.control({ position: "topleft" });
-  control.onAdd = () => {
-    const div = L.DomUtil.create("div", "layer-menu");
-    div.innerHTML =
-      `<button type="button" id="layer-menu-toggle" class="layer-menu-button">☰ 圖層</button>` +
-      `<div id="layer-menu-panel" class="layer-menu-panel" hidden>` +
-      `<label class="layer-menu-item"><input type="checkbox" id="listings-visibility-toggle" checked> 顯示辦公室物件資料</label>` +
-      `<div class="layer-menu-divider"></div>` +
-      `<div class="layer-menu-title">隱藏城市（塗黑並移除物件）</div>` +
-      ALL_COUNTIES.map(
-        (c) =>
-          `<label class="layer-menu-item"><input type="checkbox" class="county-toggle" value="${c}" checked> ${c}</label>`
-      ).join("") +
-      `</div>`;
-    L.DomEvent.disableClickPropagation(div);
-    return div;
-  };
-  control.addTo(map);
-
-  document.getElementById("layer-menu-toggle").addEventListener("click", () => {
-    const panel = document.getElementById("layer-menu-panel");
-    panel.hidden = !panel.hidden;
-  });
-
-  document.querySelectorAll(".county-toggle").forEach((checkbox) => {
-    checkbox.addEventListener("change", () => {
-      if (checkbox.checked) hiddenCounties.delete(checkbox.value);
-      else hiddenCounties.add(checkbox.value);
-      applyCountyVisibility();
-    });
-  });
-
-  document.getElementById("listings-visibility-toggle").addEventListener("change", (e) => {
-    listingsVisible = e.target.checked;
-    applyListingsVisibility();
-  });
 }
 
 async function addCountyOutlines(map) {
@@ -177,8 +119,7 @@ let listingsGeojson = null;
 let listingsLayerGroup = null;
 let unitsById = new Map();
 let listingsVisible = true;
-let listingsFilterControlEl = null;
-let listingsLegendEl = null;
+let listingsPanelBodyEl = null;
 // Default reflects the actual space need (800坪), combinable across floors
 // of the same building — not a single-unit minimum. The slider can still
 // go down to the data floor or up higher, per "filter even higher" later.
@@ -284,7 +225,6 @@ function buildListingPopupHtml(props, units) {
 function renderListingPins() {
   listingsLayerGroup.clearLayers();
   for (const feature of listingsGeojson.features) {
-    if (hiddenCounties.has(feature.properties.county)) continue;
     const units = qualifyingUnits(feature.properties.units);
     if (units.length === 0) continue;
     const [lng, lat] = feature.geometry.coordinates;
@@ -301,11 +241,18 @@ function renderListingPins() {
   }
 }
 
-function addListingsFilterControl(map) {
+// Single top-right panel: a "顯示物件" toggle (always visible) above the
+// filter sliders and pin-type legend (both hidden together when off).
+function addListingsPanel(map) {
   const control = L.control({ position: "topright" });
   control.onAdd = () => {
-    const div = L.DomUtil.create("div", "listings-filter");
+    const div = L.DomUtil.create("div", "listings-panel");
     div.innerHTML =
+      `<label class="listings-toggle-row">` +
+      `<input type="checkbox" id="listings-visibility-toggle" checked> 顯示物件` +
+      `</label>` +
+      `<div id="listings-panel-body">` +
+      `<div class="listings-filter">` +
       `<label>最小總坪數（可合併樓層）：<span id="min-area-value">${currentMinArea}</span> 坪</label>` +
       `<input type="range" id="min-area-slider" min="${MIN_AREA_FETCHED}" max="3000" step="50" value="${currentMinArea}">` +
       `<label>最高月租金（合併總額）：<span id="max-rent-value">${currentMaxRentPrice.toLocaleString()}</span> 元/月</label>` +
@@ -315,12 +262,25 @@ function addListingsFilterControl(map) {
       `<label>最高總價（合併總額）：<span id="max-sale-value">${(currentMaxSalePrice / 10000).toFixed(1)}</span> 億</label>` +
       `<input type="range" id="max-sale-slider" min="0" max="${MAX_SALE_PRICE_YI}" step="0.5" value="${currentMaxSalePrice / 10000}">` +
       `<label>最高售價單價：<span id="max-sale-unit-value">${currentMaxSaleUnitPrice.toLocaleString()}</span> 萬/坪</label>` +
-      `<input type="range" id="max-sale-unit-slider" min="0" max="${MAX_SALE_UNIT_PRICE}" step="5" value="${currentMaxSaleUnitPrice}">`;
+      `<input type="range" id="max-sale-unit-slider" min="0" max="${MAX_SALE_UNIT_PRICE}" step="5" value="${currentMaxSaleUnitPrice}">` +
+      `</div>` +
+      `<div class="listings-legend">` +
+      "<strong>物件標記</strong>" +
+      '<div><span class="swatch listing-pin-rent"></span>出租</div>' +
+      '<div><span class="swatch listing-pin-sale"></span>出售</div>' +
+      '<div><span class="swatch listing-pin-mixed"></span>租售皆有</div>' +
+      `</div>` +
+      `</div>`;
     L.DomEvent.disableClickPropagation(div);
-    listingsFilterControlEl = div;
+    listingsPanelBodyEl = div.querySelector("#listings-panel-body");
     return div;
   };
   control.addTo(map);
+
+  document.getElementById("listings-visibility-toggle").addEventListener("change", (e) => {
+    listingsVisible = e.target.checked;
+    applyListingsVisibility();
+  });
 
   const bindSlider = (sliderId, labelId, apply, options = {}) => {
     const parse = options.parse || ((v) => parseInt(v, 10));
@@ -349,31 +309,16 @@ function addListingsFilterControl(map) {
   bindSlider("max-sale-unit-slider", "max-sale-unit-value", (v) => (currentMaxSaleUnitPrice = v));
 }
 
-function addListingsLegend(map) {
-  const legend = L.control({ position: "bottomright" });
-  legend.onAdd = () => {
-    const div = L.DomUtil.create("div", "legend listings-legend");
-    div.innerHTML =
-      "<strong>物件標記</strong>" +
-      '<div><span class="swatch listing-pin-rent"></span>出租</div>' +
-      '<div><span class="swatch listing-pin-sale"></span>出售</div>' +
-      '<div><span class="swatch listing-pin-mixed"></span>租售皆有</div>';
-    listingsLegendEl = div;
-    return div;
-  };
-  legend.addTo(map);
-}
-
 // Presentation mode: hide every listing-related layer/control so only
-// the employee-distribution choropleth shows.
+// the employee-distribution choropleth shows. The toggle itself stays
+// visible so listings can be turned back on.
 function applyListingsVisibility() {
   if (listingsVisible) {
     if (!mapRef.hasLayer(listingsLayerGroup)) listingsLayerGroup.addTo(mapRef);
   } else if (mapRef.hasLayer(listingsLayerGroup)) {
     mapRef.removeLayer(listingsLayerGroup);
   }
-  if (listingsFilterControlEl) listingsFilterControlEl.style.display = listingsVisible ? "" : "none";
-  if (listingsLegendEl) listingsLegendEl.style.display = listingsVisible ? "" : "none";
+  if (listingsPanelBodyEl) listingsPanelBodyEl.style.display = listingsVisible ? "" : "none";
 }
 
 function indexUnits(geojson) {
@@ -499,8 +444,7 @@ async function addListings(map) {
   indexUnits(listingsGeojson);
   listingsLayerGroup = L.layerGroup().addTo(map);
   renderListingPins();
-  addListingsFilterControl(map);
-  addListingsLegend(map);
+  addListingsPanel(map);
 }
 
 async function addMrtLines(map) {
@@ -537,9 +481,9 @@ async function initMap() {
   const districtLayer = L.geoJSON(geojson, {
     style: districtStyle,
     onEachFeature: (feature, lyr) => {
-      const { name, county, count } = feature.properties;
+      const { name, count } = feature.properties;
       if (count > 0) {
-        const marker = L.marker(labelLatLng(feature), {
+        L.marker(labelLatLng(feature), {
           icon: L.divIcon({
             className: "district-label",
             html:
@@ -550,7 +494,6 @@ async function initMap() {
           }),
           interactive: false,
         }).addTo(map);
-        districtLabelMarkers.push({ county, marker });
       }
     },
   }).addTo(map);
@@ -560,7 +503,6 @@ async function initMap() {
   addMrtLines(map);
   addOfficeMarker(map);
   addListings(map);
-  addLayerMenu(map);
 
   document.getElementById("listing-sidebar-close").addEventListener("click", closeListingSidebar);
   initLightboxControls();
@@ -581,8 +523,51 @@ async function initMap() {
     div.innerHTML =
       "<strong>員工人數</strong>" +
       '<div class="legend-gradient"></div>' +
-      `<div class="legend-scale"><span>0</span><span>${maxCountRef}</span></div>`;
+      `<div class="legend-scale"><span>0</span><span>${maxCountRef}</span></div>` +
+      `<div class="county-bars">${countyBarsHtml(geojson)}</div>`;
     return div;
   };
   legend.addTo(map);
+}
+
+// Groups districts by county and renders one horizontal segmented bar per
+// county — segment width = that district's share of its county's total,
+// segment color = colorForCount (same scale as the choropleth), bar length
+// = county total relative to the largest county so rows stay comparable.
+function countyBarsHtml(geojson) {
+  const byCounty = new Map();
+  for (const feature of geojson.features) {
+    const { county, name, count } = feature.properties;
+    if (!byCounty.has(county)) byCounty.set(county, []);
+    byCounty.get(county).push({ name, count });
+  }
+  const entries = COUNTY_DISPLAY_ORDER.map((county) => {
+    const districts = (byCounty.get(county) || []).slice().sort((a, b) => b.count - a.count);
+    const total = districts.reduce((sum, d) => sum + d.count, 0);
+    return { county, districts, total };
+  });
+  const maxTotal = Math.max(...entries.map((e) => e.total), 1);
+
+  return entries
+    .map(({ county, districts, total }) => {
+      const barWidthPct = (total / maxTotal) * 100;
+      const segments = districts
+        .map((d) => {
+          const widthPct = total > 0 ? (d.count / total) * 100 : 0;
+          const color = colorForCount(d.count, maxCountRef);
+          return (
+            `<span class="county-bar-segment" style="width:${widthPct}%;background:${color};" ` +
+            `title="${escapeHtml(d.name)}：${d.count} 人"></span>`
+          );
+        })
+        .join("");
+      return (
+        `<div class="county-bar-row">` +
+        `<div class="county-bar-label">${escapeHtml(county)}</div>` +
+        `<div class="county-bar-track"><div class="county-bar-fill" style="width:${barWidthPct}%">${segments}</div></div>` +
+        `<div class="county-bar-total">${total}</div>` +
+        `</div>`
+      );
+    })
+    .join("");
 }
