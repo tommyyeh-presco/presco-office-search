@@ -826,7 +826,6 @@ const SPACE_BENCHMARK_DATA = [
 // HQ campus — noted in the surrounding copy, not fabricated averages.
 const ROOM_BENCHMARK_DATA = [
   { label: "Presco（現況）", value: 25.6, highlight: true },
-  { label: "Atlassian（舊金山）", value: 25 },
   { label: "NVIDIA（Endeavor）", value: 12.5 },
   { label: "Meta（Denver）*", value: 4.3, caveat: true },
 ];

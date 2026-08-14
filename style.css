@@ -872,15 +872,6 @@ header h1 {
   object-fit: contain;
 }
 
-.material-card .product-name {
-  font-size: 0.85rem;
-}
-
-.material-card .cost-list {
-  margin-top: 0.5rem;
-}
-
-
 .product-grid {
   display: flex;
   gap: 1.25rem;
