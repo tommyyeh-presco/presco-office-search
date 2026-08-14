@@ -12,58 +12,6 @@ html, body {
   background: var(--bg);
 }
 
-#gate {
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#gate-form {
-  background: #fff;
-  padding: 2.5rem;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-  text-align: center;
-  width: 320px;
-}
-
-#gate-form h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.4rem;
-  color: var(--brand);
-}
-
-#gate-form p {
-  color: #555;
-  font-size: 0.9rem;
-}
-
-#gate-password {
-  width: 100%;
-  padding: 0.6rem 0.8rem;
-  margin: 1rem 0;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-#gate-form button {
-  width: 100%;
-  padding: 0.6rem;
-  border: none;
-  border-radius: 8px;
-  background: var(--brand);
-  color: #fff;
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.error {
-  color: #c0392b;
-  font-size: 0.85rem;
-}
-
 #app {
   height: 100vh;
   display: flex;
@@ -128,10 +76,8 @@ header h1 {
   background: var(--bg);
 }
 
-/* #gate/#app both set `display` unconditionally by ID, which otherwise
-   beats the UA stylesheet's `[hidden] { display: none }` by specificity. */
-#gate[hidden],
-#app[hidden],
+/* #app sets `display` unconditionally by ID, which otherwise beats the
+   UA stylesheet's `[hidden] { display: none }` by specificity. */
 #tab-map[hidden],
 #tab-renovation[hidden] {
   display: none;

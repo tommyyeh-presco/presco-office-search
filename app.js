@@ -1,5 +1,3 @@
-document.addEventListener("presco:authed", initMap, { once: true });
-
 const LIGHT_RGB = [222, 235, 247]; // #deebf7
 const DARK_RGB = [8, 48, 107];     // #08306b
 const ZERO_BORDER_COLOR = "#b7c2cd";
@@ -854,3 +852,5 @@ function renderBenchmarkChart(containerId, data) {
 
 renderBenchmarkChart("benchmark-space-chart", SPACE_BENCHMARK_DATA);
 renderBenchmarkChart("benchmark-room-chart", ROOM_BENCHMARK_DATA);
+
+initMap();

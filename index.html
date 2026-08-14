@@ -8,17 +8,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="gate">
-    <form id="gate-form">
-      <h1>數網找辦公室</h1>
-      <p>請輸入密碼以檢視員工居住地分佈圖</p>
-      <input type="password" id="gate-password" placeholder="密碼" autocomplete="off" required>
-      <button type="submit">進入</button>
-      <p id="gate-error" class="error" hidden>密碼錯誤，請再試一次</p>
-    </form>
-  </div>
-
-  <div id="app" hidden>
+  <div id="app">
     <header>
       <h1>數網找辦公室 — 員工居住地分佈</h1>
       <p class="subtitle">北台灣各行政區員工人數（依居住地區域統計）</p>
@@ -75,8 +65,23 @@
 
         <section class="renovation-section">
           <h2>牆面</h2>
+          <div class="material-grid">
+            <div class="material-card">
+              <img src="assets/renovation/wall-white-open-office.webp" alt="全白牆面開放式辦公室案例">
+              <div class="product-name">全白牆面，開放式辦公區</div>
+            </div>
+            <div class="material-card">
+              <img src="assets/renovation/wall-white-with-accent.webp" alt="全白牆面搭配單一深色主牆案例">
+              <div class="product-name">全白牆面＋單一深色主牆</div>
+            </div>
+          </div>
           <div class="renovation-detail">
-            <p>統一重新粉刷為白色 —— 全白視覺效果乾淨明亮，保養與局部修補也相對容易，是許多辦公室翻新時的第一選擇。</p>
+            <p>
+              統一重新粉刷為白色 —— 全白視覺效果乾淨明亮，保養與局部修補也相對容易，是許多辦公室翻新時的第一選擇。
+              室內設計上也有實際理由：同一個空間裡如果超過 3 種顏色同時出現，色彩之間容易互相搶戲、彼此干擾，
+              整體反而顯得雜亂不協調。以白色為主、最多搭配一種重點色（如上圖的深色主牆），
+              才能維持空間的一致感與清爽度。
+            </p>
             <ul class="cost-list">
               <li>牆面粉刷：約 NT$900–1,600／坪</li>
               <li>全辦公室（600 坪）估算：約 NT$54 萬–96 萬</li>
@@ -295,7 +300,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-  <script src="password-gate.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
