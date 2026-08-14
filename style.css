@@ -947,18 +947,6 @@ header h1 {
   font-size: 0.9rem;
 }
 
-.product-card a {
-  display: inline-block;
-  margin-top: 0.5rem;
-  color: var(--brand);
-  font-size: 0.82rem;
-  text-decoration: none;
-}
-
-.product-card a:hover {
-  text-decoration: underline;
-}
-
 .vendor-table {
   width: 100%;
   border-collapse: collapse;
