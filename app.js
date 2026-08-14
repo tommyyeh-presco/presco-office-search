@@ -118,8 +118,15 @@ const TYPE_LABELS = { 1: "租", 2: "售" };
 let listingsGeojson = null;
 let listingsLayerGroup = null;
 let unitsById = new Map();
-let listingsVisible = true;
 let listingsPanelBodyEl = null;
+
+// Map layer visibility, controlled by the top-right 顯示項目 card. Kept
+// separate from the filter sliders (a different card) per request.
+let employeeCountVisible = true;
+let rentVisible = true;
+let saleVisible = true;
+let avgPriceVisible = false;
+let districtLabelMarkers = []; // [{ feature, marker }]
 // Default reflects the actual space need (800坪), combinable across floors
 // of the same building — not a single-unit minimum. The slider can still
 // go down to the data floor or up higher, per "filter even higher" later.
@@ -225,7 +232,9 @@ function buildListingPopupHtml(props, units) {
 function renderListingPins() {
   listingsLayerGroup.clearLayers();
   for (const feature of listingsGeojson.features) {
-    const units = qualifyingUnits(feature.properties.units);
+    const units = qualifyingUnits(feature.properties.units).filter(
+      (u) => (u.type === 1 && rentVisible) || (u.type === 2 && saleVisible)
+    );
     if (units.length === 0) continue;
     const [lng, lat] = feature.geometry.coordinates;
     L.marker([lat, lng], {
@@ -241,17 +250,15 @@ function renderListingPins() {
   }
 }
 
-// Single top-right panel: a "顯示物件" toggle (always visible) above the
-// filter sliders and pin-type legend (both hidden together when off).
+// Top-right panel: filter sliders and pin-type legend. Layer visibility
+// (including whether rent/sale pins show at all) lives in the separate
+// 顯示項目 card added by addLayersPanel — this card hides itself only
+// when neither listing type is toggled on there.
 function addListingsPanel(map) {
   const control = L.control({ position: "topright" });
   control.onAdd = () => {
     const div = L.DomUtil.create("div", "listings-panel");
     div.innerHTML =
-      `<label class="listings-toggle-row">` +
-      `<input type="checkbox" id="listings-visibility-toggle" checked> 顯示物件` +
-      `</label>` +
-      `<div id="listings-panel-body">` +
       `<div class="listings-filter">` +
       `<label>最小總坪數（可合併樓層）：<span id="min-area-value">${currentMinArea}</span> 坪</label>` +
       `<input type="range" id="min-area-slider" min="${MIN_AREA_FETCHED}" max="3000" step="50" value="${currentMinArea}">` +
@@ -269,18 +276,12 @@ function addListingsPanel(map) {
       '<div><span class="swatch listing-pin-rent"></span>出租</div>' +
       '<div><span class="swatch listing-pin-sale"></span>出售</div>' +
       '<div><span class="swatch listing-pin-mixed"></span>租售皆有</div>' +
-      `</div>` +
       `</div>`;
     L.DomEvent.disableClickPropagation(div);
-    listingsPanelBodyEl = div.querySelector("#listings-panel-body");
+    listingsPanelBodyEl = div;
     return div;
   };
   control.addTo(map);
-
-  document.getElementById("listings-visibility-toggle").addEventListener("change", (e) => {
-    listingsVisible = e.target.checked;
-    applyListingsVisibility();
-  });
 
   const bindSlider = (sliderId, labelId, apply, options = {}) => {
     const parse = options.parse || ((v) => parseInt(v, 10));
@@ -292,6 +293,9 @@ function addListingsPanel(map) {
       label.textContent = format(value);
       apply(value);
       renderListingPins();
+      // The average-price district labels are derived from qualifying
+      // listings too, so they need to stay in sync with these sliders.
+      if (avgPriceVisible) refreshDistrictLabels();
     });
   };
 
@@ -309,16 +313,152 @@ function addListingsPanel(map) {
   bindSlider("max-sale-unit-slider", "max-sale-unit-value", (v) => (currentMaxSaleUnitPrice = v));
 }
 
-// Presentation mode: hide every listing-related layer/control so only
-// the employee-distribution choropleth shows. The toggle itself stays
-// visible so listings can be turned back on.
+// Hides the filter-sliders card when neither listing type is toggled on
+// in the 顯示項目 card — no point filtering pins that aren't shown.
 function applyListingsVisibility() {
-  if (listingsVisible) {
+  const anyVisible = rentVisible || saleVisible;
+  if (anyVisible) {
     if (!mapRef.hasLayer(listingsLayerGroup)) listingsLayerGroup.addTo(mapRef);
   } else if (mapRef.hasLayer(listingsLayerGroup)) {
     mapRef.removeLayer(listingsLayerGroup);
   }
-  if (listingsPanelBodyEl) listingsPanelBodyEl.style.display = listingsVisible ? "" : "none";
+  if (listingsPanelBodyEl) listingsPanelBodyEl.style.display = anyVisible ? "" : "none";
+}
+
+// Average unit price per district, split by type since rent (元/坪/月)
+// and sale (萬/坪) aren't the same unit and can't be blended into one
+// number. Built from the same qualifyingUnits() the pins/sliders use, so
+// it stays consistent with whatever's currently filtered in.
+function computeDistrictAvgPrices() {
+  const byDistrict = new Map(); // `${county}|${district}` -> {rentSum, rentCount, saleSum, saleCount}
+  if (!listingsGeojson) return byDistrict;
+  for (const feature of listingsGeojson.features) {
+    const units = qualifyingUnits(feature.properties.units);
+    if (units.length === 0) continue;
+    const key = `${feature.properties.county}|${feature.properties.district}`;
+    if (!byDistrict.has(key)) byDistrict.set(key, { rentSum: 0, rentCount: 0, saleSum: 0, saleCount: 0 });
+    const agg = byDistrict.get(key);
+    for (const u of units) {
+      const pricePer = u.price_per;
+      if (!pricePer || pricePer <= 0) continue;
+      if (u.type === 1) {
+        agg.rentSum += pricePer;
+        agg.rentCount += 1;
+      } else if (u.type === 2) {
+        agg.saleSum += pricePer;
+        agg.saleCount += 1;
+      }
+    }
+  }
+  return byDistrict;
+}
+
+// Builds whichever lines are currently enabled for one district's label —
+// employee count/name, average price, both, or neither (caller hides the
+// marker entirely when this returns an empty string).
+function districtLabelContent(feature, avgPrices) {
+  const { name, county, count } = feature.properties;
+  const lines = [];
+  if (employeeCountVisible && count > 0) {
+    lines.push(`<div class="district-label-count">${count}</div>`);
+    lines.push(`<div class="district-label-name">${name}</div>`);
+  }
+  if (avgPriceVisible && avgPrices) {
+    const agg = avgPrices.get(`${county}|${name}`);
+    if (agg) {
+      const parts = [];
+      if (agg.rentCount > 0) {
+        parts.push(`租 ${Math.round(agg.rentSum / agg.rentCount).toLocaleString()}元/坪/月`);
+      }
+      if (agg.saleCount > 0) {
+        parts.push(`售 ${(agg.saleSum / agg.saleCount).toFixed(1)}萬/坪`);
+      }
+      if (parts.length > 0) {
+        lines.push(`<div class="district-label-price">${parts.join(" · ")}</div>`);
+      }
+    }
+  }
+  return lines.join("");
+}
+
+// Rebuilds every district label's content from current toggle state, and
+// shows/hides each marker depending on whether it ends up with anything
+// to say — e.g. a district can have qualifying listings but 0 employees.
+function refreshDistrictLabels() {
+  const avgPrices = avgPriceVisible ? computeDistrictAvgPrices() : null;
+  for (const { feature, marker } of districtLabelMarkers) {
+    const html = districtLabelContent(feature, avgPrices);
+    if (!html) {
+      if (mapRef.hasLayer(marker)) mapRef.removeLayer(marker);
+      continue;
+    }
+    marker.setIcon(
+      L.divIcon({ className: "district-label", html, iconSize: [110, 58], iconAnchor: [55, 29] })
+    );
+    if (!mapRef.hasLayer(marker)) marker.addTo(mapRef);
+  }
+}
+
+// Top-right card, separate from the filter-sliders card, controlling what
+// shows on the map at all: district employee-count labels, rent/sale
+// pins, and the average-unit-price district labels. 全顯示 is a "select
+// all" shortcut, not a 5th independent layer.
+function addLayersPanel(map) {
+  const control = L.control({ position: "topright" });
+  control.onAdd = () => {
+    const div = L.DomUtil.create("div", "layers-panel");
+    div.innerHTML =
+      `<div class="layers-panel-title">顯示項目</div>` +
+      `<label class="layers-toggle-row"><input type="checkbox" id="layer-all"> 全顯示</label>` +
+      `<label class="layers-toggle-row"><input type="checkbox" id="layer-employee-count" checked> 居住地人數</label>` +
+      `<label class="layers-toggle-row"><input type="checkbox" id="layer-rent" checked> 承租物件</label>` +
+      `<label class="layers-toggle-row"><input type="checkbox" id="layer-sale" checked> 交易物件</label>` +
+      `<label class="layers-toggle-row"><input type="checkbox" id="layer-avg-price"> 平均單價</label>`;
+    L.DomEvent.disableClickPropagation(div);
+    return div;
+  };
+  control.addTo(map);
+
+  const allBox = document.getElementById("layer-all");
+  const subBoxes = [
+    { el: document.getElementById("layer-employee-count"), setter: (v) => (employeeCountVisible = v) },
+    { el: document.getElementById("layer-rent"), setter: (v) => (rentVisible = v) },
+    { el: document.getElementById("layer-sale"), setter: (v) => (saleVisible = v) },
+    { el: document.getElementById("layer-avg-price"), setter: (v) => (avgPriceVisible = v) },
+  ];
+
+  const syncAllCheckbox = () => {
+    const states = subBoxes.map((b) => b.el.checked);
+    const allOn = states.every(Boolean);
+    const allOff = states.every((s) => !s);
+    allBox.checked = allOn;
+    allBox.indeterminate = !allOn && !allOff;
+  };
+
+  const applyLayerToggles = () => {
+    renderListingPins();
+    refreshDistrictLabels();
+    applyListingsVisibility();
+  };
+
+  allBox.addEventListener("change", () => {
+    subBoxes.forEach((b) => {
+      b.el.checked = allBox.checked;
+      b.setter(allBox.checked);
+    });
+    allBox.indeterminate = false;
+    applyLayerToggles();
+  });
+
+  subBoxes.forEach((b) => {
+    b.el.addEventListener("change", () => {
+      b.setter(b.el.checked);
+      syncAllCheckbox();
+      applyLayerToggles();
+    });
+  });
+
+  syncAllCheckbox();
 }
 
 function indexUnits(geojson) {
@@ -481,27 +621,20 @@ async function initMap() {
   const districtLayer = L.geoJSON(geojson, {
     style: districtStyle,
     onEachFeature: (feature, lyr) => {
-      const { name, count } = feature.properties;
-      if (count > 0) {
-        L.marker(labelLatLng(feature), {
-          icon: L.divIcon({
-            className: "district-label",
-            html:
-              `<div class="district-label-count">${count}</div>` +
-              `<div class="district-label-name">${name}</div>`,
-            iconSize: [90, 40],
-            iconAnchor: [45, 20],
-          }),
-          interactive: false,
-        }).addTo(map);
-      }
+      const marker = L.marker(labelLatLng(feature), {
+        icon: L.divIcon({ className: "district-label", html: "", iconSize: [110, 58], iconAnchor: [55, 29] }),
+        interactive: false,
+      });
+      districtLabelMarkers.push({ feature, marker });
     },
   }).addTo(map);
   districtLayerRef = districtLayer;
+  refreshDistrictLabels();
 
   const taipeiBounds = await addCountyOutlines(map);
   addMrtLines(map);
   addOfficeMarker(map);
+  addLayersPanel(map);
   addListings(map);
 
   document.getElementById("listing-sidebar-close").addEventListener("click", closeListingSidebar);

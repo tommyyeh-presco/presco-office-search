@@ -182,6 +182,18 @@ header h1 {
     0 0 4px rgba(255, 255, 255, 0.85);
 }
 
+.district-label-price {
+  font-weight: 700;
+  font-size: 11px;
+  color: #7a3b00;
+  text-shadow:
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
+    -1px 1px 0 #fff,
+    1px 1px 0 #fff,
+    0 0 4px rgba(255, 255, 255, 0.85);
+}
+
 .office-star {
   color: #ffcc00;
   font-size: 34px;
@@ -388,19 +400,27 @@ header h1 {
   font-size: 0.8rem;
 }
 
-.listings-toggle-row {
+.layers-panel {
+  background: #fff;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-size: 0.8rem;
+}
+
+.layers-panel-title {
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 0.3rem;
+}
+
+.layers-toggle-row {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  font-weight: 700;
-  color: #222;
+  color: #333;
   cursor: pointer;
-}
-
-#listings-panel-body {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid #eee;
+  padding: 0.15rem 0;
 }
 
 .listings-filter label {
