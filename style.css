@@ -921,6 +921,11 @@ header h1 {
   margin-bottom: 0.5rem;
 }
 
+.material-card-full-photo img {
+  height: auto;
+  object-fit: contain;
+}
+
 .material-card .product-name {
   font-size: 0.85rem;
 }
