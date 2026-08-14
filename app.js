@@ -517,6 +517,7 @@ async function initMap() {
     map.fitBounds(taipeiBounds || districtLayer.getBounds(), { padding: [160, 160] });
   });
 
+  let countyBarsExpanded = false;
   const legend = L.control({ position: "bottomright" });
   legend.onAdd = () => {
     const div = L.DomUtil.create("div", "legend");
@@ -524,10 +525,23 @@ async function initMap() {
       "<strong>員工人數</strong>" +
       '<div class="legend-gradient"></div>' +
       `<div class="legend-scale"><span>0</span><span>${maxCountRef}</span></div>` +
-      `<div class="county-bars">${countyBarsHtml(geojson)}</div>`;
+      `<div class="county-bars-header">` +
+      `<span>依區域分佈</span>` +
+      `<button type="button" id="county-bars-toggle" class="county-bars-toggle-btn">展開 ▾</button>` +
+      `</div>` +
+      `<div id="county-bars-container">${countyBarsHtml(geojson)}</div>`;
+    L.DomEvent.disableClickPropagation(div);
     return div;
   };
   legend.addTo(map);
+
+  document.getElementById("county-bars-toggle").addEventListener("click", () => {
+    countyBarsExpanded = !countyBarsExpanded;
+    document.getElementById("county-bars-toggle").textContent = countyBarsExpanded ? "收合 ▴" : "展開 ▾";
+    document.getElementById("county-bars-container").innerHTML = countyBarsExpanded
+      ? countyBarsExpandedHtml(geojson)
+      : countyBarsHtml(geojson);
+  });
 }
 
 // Groups districts by county and renders one horizontal segmented bar per
@@ -570,4 +584,50 @@ function countyBarsHtml(geojson) {
       );
     })
     .join("");
+}
+
+const MAX_DISTRICTS_PER_COUNTY = 10;
+
+// Expanded view: one named row per district (top 10 by count, per county)
+// instead of a single unlabeled stacked bar — bar length and color both
+// scale against the global max so they read consistently with the map.
+function countyBarsExpandedHtml(geojson) {
+  const byCounty = new Map();
+  for (const feature of geojson.features) {
+    const { county, name, count } = feature.properties;
+    if (!byCounty.has(county)) byCounty.set(county, []);
+    byCounty.get(county).push({ name, count });
+  }
+
+  return COUNTY_DISPLAY_ORDER.map((county) => {
+    const withEmployees = (byCounty.get(county) || [])
+      .filter((d) => d.count > 0)
+      .sort((a, b) => b.count - a.count);
+    const shown = withEmployees.slice(0, MAX_DISTRICTS_PER_COUNTY);
+    const remaining = withEmployees.length - shown.length;
+
+    const rows = shown
+      .map((d) => {
+        const widthPct = (d.count / maxCountRef) * 100;
+        const color = colorForCount(d.count, maxCountRef);
+        return (
+          `<div class="district-bar-row">` +
+          `<div class="district-bar-label">${escapeHtml(d.name)}</div>` +
+          `<div class="district-bar-track"><div class="district-bar-fill" style="width:${widthPct}%;background:${color};"></div></div>` +
+          `<div class="district-bar-count">${d.count}</div>` +
+          `</div>`
+        );
+      })
+      .join("");
+    const moreNote =
+      remaining > 0 ? `<div class="district-bar-more">還有 ${remaining} 個行政區未顯示</div>` : "";
+
+    return (
+      `<div class="county-expanded-group">` +
+      `<div class="county-expanded-title">${escapeHtml(county)}</div>` +
+      rows +
+      moreNote +
+      `</div>`
+    );
+  }).join("");
 }

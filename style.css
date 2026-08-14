@@ -163,7 +163,7 @@ header h1 {
 }
 
 .legend-gradient {
-  width: 120px;
+  width: 100%;
   height: 12px;
   margin: 6px 0 2px;
   border-radius: 3px;
@@ -177,10 +177,30 @@ header h1 {
   color: #555;
 }
 
-.county-bars {
+.county-bars-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
   margin-top: 0.6rem;
   padding-top: 0.5rem;
   border-top: 1px solid #eee;
+  color: #444;
+  font-size: 0.75rem;
+}
+
+.county-bars-toggle-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#county-bars-container {
+  margin-top: 0.3rem;
 }
 
 .county-bar-row {
@@ -225,6 +245,66 @@ header h1 {
   font-size: 0.72rem;
   color: #555;
   text-align: right;
+}
+
+.county-expanded-group {
+  margin-top: 0.6rem;
+}
+
+.county-expanded-group:first-child {
+  margin-top: 0;
+}
+
+.county-expanded-title {
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #333;
+  margin-bottom: 0.25rem;
+}
+
+.district-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0.2rem;
+}
+
+.district-bar-label {
+  width: 56px;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.district-bar-track {
+  width: 120px;
+  flex-shrink: 0;
+  background: #eef3f8;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.district-bar-fill {
+  height: 10px;
+  border-radius: 3px;
+}
+
+.district-bar-count {
+  width: 22px;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  color: #555;
+  text-align: right;
+}
+
+.district-bar-more {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  color: #888;
+  font-style: italic;
 }
 
 .listing-pin {
