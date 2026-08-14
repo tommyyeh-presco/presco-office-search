@@ -88,14 +88,52 @@ header h1 {
   font-size: 0.85rem;
 }
 
+#main-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.main-tab {
+  background: #eef2f6;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+}
+
+.main-tab.active {
+  background: var(--brand);
+  color: #fff;
+}
+
 #map {
   flex: 1;
+}
+
+.tab-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+#tab-map {
+  display: flex;
+  flex-direction: column;
+}
+
+#tab-renovation {
+  overflow-y: auto;
+  background: var(--bg);
 }
 
 /* #gate/#app both set `display` unconditionally by ID, which otherwise
    beats the UA stylesheet's `[hidden] { display: none }` by specificity. */
 #gate[hidden],
-#app[hidden] {
+#app[hidden],
+#tab-map[hidden],
+#tab-renovation[hidden] {
   display: none;
 }
 
@@ -724,4 +762,212 @@ header h1 {
   background: rgba(0, 0, 0, 0.5);
   padding: 0.25rem 0.7rem;
   border-radius: 12px;
+}
+
+/* Renovation proposal tab */
+
+.renovation-content {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.renovation-section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.renovation-intro h2 {
+  margin-top: 0;
+}
+
+.renovation-section h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  color: var(--brand);
+}
+
+.renovation-section h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.renovation-section p {
+  line-height: 1.6;
+  color: #333;
+}
+
+.renovation-note {
+  font-size: 0.78rem;
+  color: #888;
+  line-height: 1.5;
+}
+
+.renovation-detail p {
+  margin: 0.4rem 0;
+}
+
+.cost-list {
+  margin: 0.6rem 0 0;
+  padding-left: 1.2rem;
+  color: #444;
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.benchmark-chart {
+  margin-top: 0.4rem;
+}
+
+.benchmark-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.benchmark-label {
+  width: 150px;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: #444;
+}
+
+.benchmark-track {
+  flex: 1;
+  height: 14px;
+  background: #eef3f8;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.benchmark-fill {
+  height: 100%;
+  background: #9db6cc;
+  border-radius: 4px;
+}
+
+.benchmark-row-highlight .benchmark-label {
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.benchmark-row-highlight .benchmark-fill {
+  background: var(--brand);
+}
+
+.benchmark-value {
+  width: 42px;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: #555;
+  text-align: right;
+}
+
+.renovation-flooring {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.flooring-hero {
+  width: 280px;
+  max-width: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.renovation-flooring .renovation-detail {
+  flex: 1;
+  min-width: 240px;
+}
+
+.product-grid {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.product-card {
+  flex: 1;
+  min-width: 180px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.product-card img {
+  max-width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  margin-bottom: 0.6rem;
+}
+
+.product-name {
+  font-weight: 700;
+  color: #222;
+  font-size: 0.9rem;
+}
+
+.product-meta {
+  color: #666;
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+}
+
+.product-price {
+  color: var(--brand);
+  font-weight: 700;
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.product-card a {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--brand);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.product-card a:hover {
+  text-decoration: underline;
+}
+
+.vendor-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  font-size: 0.82rem;
+}
+
+.vendor-table th,
+.vendor-table td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid #eee;
+  color: #444;
+}
+
+.vendor-table th {
+  color: #888;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.photo-pending {
+  border: 1px dashed #ccc;
+  border-radius: 8px;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: #aaa;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
 }

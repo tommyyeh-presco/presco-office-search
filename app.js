@@ -633,3 +633,68 @@ function countyBarsExpandedHtml(geojson) {
 
   return `<div class="county-bars-expanded-grid">${groups}</div>`;
 }
+
+// ---------------------------------------------------------------------
+// Main tab switcher (地圖 / 裝修提案)
+// ---------------------------------------------------------------------
+
+document.querySelectorAll(".main-tab").forEach((button) => {
+  button.addEventListener("click", () => {
+    const tab = button.dataset.tab;
+    document.querySelectorAll(".main-tab").forEach((b) => b.classList.toggle("active", b === button));
+    document.getElementById("tab-map").hidden = tab !== "map";
+    document.getElementById("tab-renovation").hidden = tab !== "renovation";
+    // Leaflet miscalculates its size if the container was display:none
+    // while resized (e.g. the window changed size on the other tab).
+    if (tab === "map" && mapRef) {
+      requestAnimationFrame(() => mapRef.invalidateSize());
+    }
+  });
+});
+
+// ---------------------------------------------------------------------
+// Renovation tab: space/meeting-room benchmark charts
+// ---------------------------------------------------------------------
+
+// 坪/employee at each company's HQ or largest known office site — see
+// commit message / project notes for sources. These are estimates from
+// news coverage and design-portfolio case studies, not official company
+// disclosures (none of these companies publish this figure directly).
+const SPACE_BENCHMARK_DATA = [
+  { label: "Presco（現況）", value: 2.6, highlight: true },
+  { label: "業界基準（低，JLL）", value: 3.7 },
+  { label: "業界基準（高，CBRE）", value: 4.9 },
+  { label: "NVIDIA", value: 6.4 },
+  { label: "SAP", value: 7.3 },
+  { label: "Google", value: 7.7 },
+  { label: "Microsoft", value: 10.5 },
+  { label: "MediaTek*", value: 15.1, caveat: true },
+];
+
+// Employees per meeting room — lower is more generously staffed.
+const ROOM_BENCHMARK_DATA = [
+  { label: "Presco（現況）", value: 25.6, highlight: true },
+  { label: "NVIDIA（Endeavor）", value: 12.5 },
+];
+
+function renderBenchmarkChart(containerId, data) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const maxValue = Math.max(...data.map((d) => d.value));
+  container.innerHTML = data
+    .map((d) => {
+      const widthPct = (d.value / maxValue) * 100;
+      const rowClass = d.highlight ? "benchmark-row benchmark-row-highlight" : "benchmark-row";
+      return (
+        `<div class="${rowClass}">` +
+        `<div class="benchmark-label">${escapeHtml(d.label)}</div>` +
+        `<div class="benchmark-track"><div class="benchmark-fill" style="width:${widthPct}%"></div></div>` +
+        `<div class="benchmark-value">${d.value}${d.caveat ? "*" : ""}</div>` +
+        `</div>`
+      );
+    })
+    .join("");
+}
+
+renderBenchmarkChart("benchmark-space-chart", SPACE_BENCHMARK_DATA);
+renderBenchmarkChart("benchmark-room-chart", ROOM_BENCHMARK_DATA);
