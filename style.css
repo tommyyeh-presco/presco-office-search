@@ -241,8 +241,30 @@ header h1 {
 
 .listing-popup {
   font-size: 0.85rem;
-  max-height: 260px;
+  /* Fits 2-3 entries in full (worst-case measured height ~315px); 4+
+     entries overflow into the scrollbar below. */
+  max-height: 330px;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand) #eef2f6;
+}
+
+.listing-popup::-webkit-scrollbar {
+  width: 7px;
+}
+
+.listing-popup::-webkit-scrollbar-track {
+  background: #eef2f6;
+  border-radius: 4px;
+}
+
+.listing-popup::-webkit-scrollbar-thumb {
+  background: var(--brand);
+  border-radius: 4px;
+}
+
+.listing-popup::-webkit-scrollbar-thumb:hover {
+  background: #0a63c2;
 }
 
 .listing-popup-address {
